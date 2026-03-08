@@ -129,4 +129,12 @@ Concebido como um **case sênior de analytics e automação** para contextos de 
 
 ---
 
-*Desenvolvido por [Seu Nome] · [LinkedIn] · [GitHub]*
+## 👤 Autor
+
+**Igor Pereira Pinto**  
+Analista de Dados / BI Sênior  
+[LinkedIn](https://linkedin.com/in/igorpereirapinto) · [GitHub](https://github.com/igorpereirapinto)
+
+> *"Dado sem pergunta de negócio é relatório. Dado com pergunta é decisão."*
+
+
