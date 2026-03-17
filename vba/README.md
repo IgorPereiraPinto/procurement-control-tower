@@ -73,6 +73,14 @@ O arquivo `procurement_standardization.bas` representa uma macro voltada para:
 
 ---
 
+## Sobre o arquivo `.bas`
+
+O arquivo **`procurement_standardization.bas`** é o código-fonte da macro em VBA utilizado neste projeto.
+
+A extensão **`.bas`** indica que se trata de um **módulo padrão do VBA exportado do Excel**, permitindo registrar o código da automação diretamente no repositório para fins de documentação, portfólio e versionamento.
+
+---
+
 ## Observação Importante
 
 > O código desta pasta foi criado para fins **didáticos e de portfólio**. Ele não representa uma implantação produtiva real, mas um exemplo plausível e coerente de como o VBA poderia ser utilizado em apoio à operação de Procurement.
