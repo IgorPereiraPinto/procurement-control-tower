@@ -1,105 +1,160 @@
-# Flow 03 — Business Alerts
+# 🚨 Flow 03 — Business Alerts
 
 ## Contexto
-Uma solução de Procurement madura não deve apenas consolidar dados, mas também sinalizar situações que exigem ação. Alertas de negócio ajudam a transformar indicadores em eventos acionáveis, reduzindo tempo de resposta e apoiando a priorização da área.
+
+Uma solução de Procurement madura não deve apenas consolidar dados — ela deve sinalizar situações que exigem ação. Alertas de negócio transformam indicadores em eventos acionáveis, reduzindo tempo de resposta e apoiando a priorização da área.
+
+---
 
 ## Objetivo
-Documentar um fluxo automatizado de alertas para desvios críticos de Procurement, conectando indicadores e regras de negócio a notificações padronizadas.
 
-## Finalidade do fluxo
-Este fluxo foi desenhado para:
+Documentar um fluxo automatizado de alertas para desvios críticos de Procurement, conectando indicadores e regras de negócio a notificações padronizadas e direcionadas.
 
-- detectar condições críticas automaticamente
-- alertar compradores e gestores
-- reduzir dependência de monitoramento manual
-- acelerar reação a risco e oportunidade
+---
 
-## Gatilhos sugeridos
-- ao final de cada atualização
-- em janelas programadas
-- sempre que um indicador ultrapassar um limite definido
+## Visão Geral do Fluxo
+```text
+[Atualização concluída]
+ou
+[Janela programada atingida]
+         │
+         ▼
+[Ler camada mais recente de indicadores]
+         │
+         ▼
+[Aplicar regras de negócio]
+         │
+    ┌────┴──────────────────────┐
+  nenhuma condição         condição atendida
+  atendida                      │
+    │                           ▼
+    │              [Montar mensagem padronizada]
+    │                           │
+    │                           ▼
+    │              [Enviar alerta (e-mail / Teams)]
+    │                           │
+    │                           ▼
+    │              [Registrar alerta no log]
+    │                           │
+    └───────────────┬───────────┘
+                   ▼
+        [Execução concluída]
+```
 
-## Regras de alerta sugeridas
+---
 
-### 1. Categoria acima do orçamento
-Disparar alerta quando o gasto da categoria ultrapassar limite definido versus orçamento.
+## Gatilhos
 
-**Exemplo de uso:** antecipar revisão de categoria ou negociação.
+| Tipo | Condição |
+|---|---|
+| **Orientado a evento** | Ao final de cada atualização bem-sucedida da camada analítica |
+| **Agendado** | Em janelas programadas de monitoramento |
+| **Threshold** | Sempre que um indicador ultrapassar um limite definido |
 
-### 2. Custo acima do benchmark
-Disparar alerta quando o custo atual estiver acima da referência de benchmark.
+---
 
-**Exemplo de uso:** sinalizar oportunidade de savings potencial.
+## Regras de Alerta
 
-### 3. Fornecedor com atraso recorrente
-Disparar alerta quando o fornecedor apresentar frequência de atraso acima do limite aceitável.
+| # | Alerta | Condição de disparo | Exemplo de uso |
+|---|---|---|---|
+| 1 | **Categoria acima do orçamento** | Gasto da categoria ultrapassa limite definido vs orçamento | Antecipar revisão de categoria ou renegociação |
+| 2 | **Custo acima do benchmark** | Custo atual está acima da referência de benchmark | Sinalizar oportunidade de savings potencial |
+| 3 | **Fornecedor com atraso recorrente** | Frequência de atraso acima do limite aceitável | Mitigar risco de abastecimento |
+| 4 | **Supplier Risk Score elevado** | Score consolidado atinge faixa crítica (`HIGH RISK`) | Priorizar avaliação de fornecedor e continuidade |
+| 5 | **Falha de qualidade relevante** | Não conformidade crítica ou reincidente detectada | Apoiar decisão de bloqueio, revisão ou escalonamento |
 
-**Exemplo de uso:** mitigar risco de abastecimento.
+---
 
-### 4. Supplier Risk Score elevado
-Disparar alerta quando o score consolidado de risco atingir faixa crítica.
-
-**Exemplo de uso:** priorizar avaliação de fornecedor e continuidade.
-
-### 5. Falha de qualidade relevante
-Disparar alerta quando houver não conformidade crítica ou reincidente.
-
-**Exemplo de uso:** apoiar decisão de bloqueio, revisão ou escalonamento.
-
-## Estrutura do fluxo
+## Etapas do Fluxo
 
 ### Etapa 1 — Leitura da base atualizada
-O fluxo acessa a camada mais recente de indicadores e exceções.
+O fluxo acessa a camada mais recente de indicadores e exceções da solução analítica.
 
 ### Etapa 2 — Aplicação das regras de negócio
-Cada regra compara o valor atual com o limite definido.
+Cada regra compara o valor atual com o threshold definido. Apenas condições atendidas avançam para geração de alerta.
 
 ### Etapa 3 — Geração do alerta
-Caso a condição seja atendida, o sistema monta uma mensagem padronizada contendo:
-- tipo do alerta
-- categoria ou fornecedor afetado
-- valor ou desvio encontrado
-- impacto resumido
-- ação recomendada
+O sistema monta uma mensagem padronizada contendo tipo do alerta, entidade afetada (categoria ou fornecedor), valor ou desvio encontrado, impacto resumido e ação recomendada.
 
 ### Etapa 4 — Envio
-O alerta pode ser enviado por:
-- e-mail
-- Teams
-- log operacional
-- lista de acompanhamento
+O alerta é enviado pelo canal configurado para aquele tipo de regra, com destinatários segmentados por perfil.
 
 ### Etapa 5 — Registro
-Todo alerta emitido deve ser registrado com:
-- data/hora
-- tipo de alerta
-- destinatário
-- status de envio
-- referência do indicador
+Todo alerta emitido é registrado no log operacional para rastreabilidade e análise de recorrência.
 
-## Saídas esperadas
-- alertas automáticos
-- histórico de alertas emitidos
-- rastreabilidade da comunicação
-- maior prontidão para ação corretiva ou preventiva
+---
 
-## Benefícios de negócio
-- acelera reação a desvios críticos
-- ajuda compradores a priorizar atuação
-- reduz dependência de leitura manual de dashboards
-- aproxima analytics de tomada de decisão
+## Canais de Envio
 
-## Exemplo de mensagem de alerta
-**Alerta: categoria acima do orçamento**  
-A categoria **Embalagens** apresentou gasto **12,4% acima do orçamento do mês**.  
-Impacto estimado: **R$ 180 mil** acima do previsto.  
-Ação sugerida: **priorizar revisão de spend e renegociação com fornecedores principais**.
+| Canal | Uso recomendado |
+|---|---|
+| **E-mail** | Alertas formais, com detalhe de impacto e ação recomendada |
+| **Teams** | Alertas operacionais de resposta rápida para o time de Procurement |
+| **Log operacional** | Registro permanente de todos os alertas emitidos |
 
-## Pontos de atenção
-- evitar excesso de alertas sem priorização
-- definir thresholds coerentes com o negócio
-- segmentar destinatários por tipo de alerta
-- revisar periodicamente as regras de disparo
+---
 
-## Posicionamento final
-O fluxo de Business Alerts é a ponte entre monitoramento e ação. Ele transforma números em sinais claros, úteis e oportunos para a área de Procurement.
+## Log de Alertas
+
+Campos registrados a cada alerta emitido:
+
+| Campo | Descrição |
+|---|---|
+| `alert_id` | Identificador único do alerta |
+| `alert_type` | Código da regra que gerou o alerta |
+| `alert_datetime` | Data e hora de emissão |
+| `affected_entity` | Categoria ou fornecedor afetado |
+| `indicator_value` | Valor do indicador no momento do disparo |
+| `threshold_value` | Limite configurado para a regra |
+| `recipient` | Destinatário do alerta |
+| `send_status` | `SENT` / `FAILED` |
+
+---
+
+## Exemplo de Mensagem
+
+> **🚨 Alerta: Categoria acima do orçamento**
+>
+> A categoria **Embalagens** apresentou gasto **12,4% acima do orçamento do mês**.
+> Impacto estimado: **R$ 180 mil** acima do previsto.
+> Ação sugerida: priorizar revisão de spend e renegociação com fornecedores principais.
+
+---
+
+## Saídas Esperadas
+
+| Saída | Condição |
+|---|---|
+| Alerta enviado ao responsável | Condição de negócio atendida |
+| Log de alerta registrado | Sempre — independente do canal de envio |
+| Nenhuma ação | Nenhuma condição atendida na execução |
+
+---
+
+## Benefícios de Negócio
+
+| Benefício | Impacto |
+|---|---|
+| Acelera reação a desvios críticos | Menor janela entre o problema e a ação corretiva |
+| Ajuda compradores a priorizar atuação | Foco no que realmente exige atenção no período |
+| Reduz dependência de leitura manual | Dashboard não precisa ser consultado para detectar urgências |
+| Aproxima analytics de tomada de decisão | Indicador vira sinal claro, com contexto e recomendação |
+
+---
+
+## Pontos de Atenção
+
+- definir thresholds coerentes com o negócio antes de ativar o fluxo
+- segmentar destinatários por tipo de alerta — nem todo alerta é para todos
+- evitar excesso de alertas sem priorização: ruído reduz atenção
+- revisar periodicamente as regras de disparo para refletir mudanças no negócio
+
+---
+
+## Posicionamento Final
+
+> O fluxo de Business Alerts é a **ponte entre monitoramento e ação**. Ele transforma números em sinais claros, úteis e oportunos — aproximando a camada analítica da tomada de decisão real em Procurement.
+
+---
+
+*[← Voltar para automate/README.md](./README.md)*
