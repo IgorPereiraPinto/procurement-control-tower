@@ -369,7 +369,8 @@ code{font-family:'Courier New',monospace;font-size:11px;background:#f3f4f6;paddi
   <div class="nav-item" data-page="p3" onclick="navTo('p3')"><span class="nav-icon">⟲</span>Suppliers &amp; Negotiation</div>
   <div class="nav-item" data-page="p4" onclick="navTo('p4')"><span class="nav-icon">⏱</span>Processo &amp; Operação</div>
   <div class="nav-item" data-page="p5" onclick="navTo('p5')"><span class="nav-icon">⚑</span>Risco &amp; Compliance</div>
-  <div class="nav-item" data-page="p6" onclick="navTo('p6')"><span class="nav-icon">☰</span>Glossário &amp; Fontes</div>
+  <div class="nav-item" data-page="p6" onclick="navTo('p6')"><span class="nav-icon">◎</span>Cost Model</div>
+  <div class="nav-item" data-page="p7" onclick="navTo('p7')"><span class="nav-icon">☰</span>Glossário &amp; Fontes</div>
 </nav>
 
 <!-- ========================================================= CONTENT -->
@@ -593,8 +594,60 @@ code{font-family:'Courier New',monospace;font-size:11px;background:#f3f4f6;paddi
   <div class="alert-block" id="p5-alerts"></div>
 </div>
 
-<!-- ======================== PAGE 6 — GLOSSÁRIO -->
+<!-- ======================== PAGE 6 — COST MODEL -->
 <div class="page" id="p6">
+  <div class="page-header">
+    <div class="page-title">Cost Model</div>
+    <div class="page-sub">Benchmark de mercado, sinais externos e janela de renegociação por categoria</div>
+  </div>
+
+  <div class="kpi-grid g4" id="p6-kpis"></div>
+
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Preço Contratado vs Benchmark de Mercado</div><div class="chart-sub">Índice normalizado por categoria · base 100 = benchmark</div></div>
+        <div class="legend"><span><span class="ld" style="background:var(--c1)"></span>Contratado</span><span><span class="ld" style="background:var(--c2)"></span>Benchmark</span></div>
+      </div>
+      <div style="position:relative;height:240px"><canvas id="chart-bench"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Evolução do Preço Unitário — Materiais Chave</div><div class="chart-sub">Variação mês a mês · Jan–Abr 2025</div></div>
+        <div class="legend" id="price-legend"></div>
+      </div>
+      <div style="position:relative;height:240px"><canvas id="chart-price-evo"></canvas></div>
+    </div>
+  </div>
+
+  <div class="table-card" style="margin-bottom:16px">
+    <div class="table-hdr">
+      <div class="table-title">Detalhamento por Categoria — Pressão e Oportunidade</div>
+      <div class="table-meta">Sinais externos + janela de renegociação</div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th>Categoria</th>
+        <th>Grupo</th>
+        <th class="r">Preço Contratado</th>
+        <th class="r">Benchmark Mercado</th>
+        <th class="r">Desvio</th>
+        <th>Sinal Externo</th>
+        <th class="r">Pressão (%)</th>
+        <th>Janela Reneg.</th>
+        <th>Classificação</th>
+      </tr></thead>
+      <tbody id="p6-table"></tbody>
+    </table></div>
+  </div>
+
+  <div class="three-col" id="p6-signals"></div>
+
+  <div class="story" id="p6-story"></div>
+</div>
+
+<!-- ======================== PAGE 7 — GLOSSÁRIO -->
+<div class="page" id="p7">
   <div class="page-header">
     <div class="page-title">Glossário, Fontes e Regras</div>
     <div class="page-sub">Definições, fórmulas, critérios de alerta e metodologia do dashboard</div>
@@ -603,15 +656,15 @@ code{font-family:'Courier New',monospace;font-size:11px;background:#f3f4f6;paddi
   <div class="kpi-grid g3" style="margin-bottom:24px">
     <div class="hl-card hl-brand">
       <div class="hl-title">📋 Fontes de Dados</div>
-      <div class="hl-text">Purchase Orders · Suppliers Master · Budget Anual<br>Periodicidade: diária (POs) | mensal (Budget)</div>
+      <div class="hl-text">Purchase Orders · Suppliers Master · Budget Anual · Benchmark de Mercado<br>Periodicidade: diária (POs) | mensal (Budget e Benchmark)</div>
     </div>
     <div class="hl-card hl-green">
       <div class="hl-title">🔄 Frequência de Atualização</div>
-      <div class="hl-text">POs: em tempo real (pós-aprovação no ERP)<br>Budget: revisão mensal pelo time de FP&amp;A</div>
+      <div class="hl-text">POs: em tempo real (pós-aprovação no ERP)<br>Budget: revisão mensal pelo time de FP&amp;A<br>Benchmark: atualização trimestral</div>
     </div>
     <div class="hl-card hl-amber">
       <div class="hl-title">⚠ Critérios de Alerta</div>
-      <div class="hl-text">Desvio budget &gt; 5% · Lead time &gt; 15 dias<br>Spend crítico &gt; 70% · Contrato inativo + PO aberta</div>
+      <div class="hl-text">Desvio budget &gt; 5% · Lead time &gt; 15 dias<br>Spend crítico &gt; 70% · Contrato inativo + PO aberta<br>Desvio vs benchmark &gt; 8%</div>
     </div>
   </div>
 
@@ -629,8 +682,8 @@ code{font-family:'Courier New',monospace;font-size:11px;background:#f3f4f6;paddi
         <div class="hl-text" style="margin-top:6px;font-size:11.5px">Dimensão mestre. Campos: <code>supplier_id</code>, <code>supplier_name</code>, <code>supplier_group</code>, <code>supplier_region</code>, <code>supplier_status</code>, <code>contract_status</code>, <code>critical_supplier_flag</code>, <code>supplier_tier</code></div>
       </div>
       <div>
-        <strong style="font-size:12px;color:var(--text-strong)">budget</strong>
-        <div class="hl-text" style="margin-top:6px;font-size:11.5px">Referência financeira. Campos: <code>fiscal_year</code>, <code>fiscal_month</code>, <code>category_name</code>, <code>budget_amount</code>. Join via <code>category_name + fiscal_year + fiscal_month</code></div>
+        <strong style="font-size:12px;color:var(--text-strong)">budget + benchmark</strong>
+        <div class="hl-text" style="margin-top:6px;font-size:11.5px">Referência financeira e mercado. <code>fiscal_year</code>, <code>fiscal_month</code>, <code>category_name</code>, <code>budget_amount</code>, <code>benchmark_price</code>, <code>external_signal</code>, <code>signal_trend_pct</code></div>
       </div>
     </div>
   </div>
@@ -796,6 +849,7 @@ function renderCurrentPage(){
   else if(pg==='p4') renderP4();
   else if(pg==='p5') renderP5();
   else if(pg==='p6') renderP6();
+  else if(pg==='p7') renderP7();
 }
 function destroyCharts(){
   Object.values(activeCharts).forEach(c=>{try{c.destroy()}catch(e){}});
@@ -1290,9 +1344,178 @@ function renderP5(){
 }
 
 /* =========================================================
-   PAGE 6 — GLOSSÁRIO
+   COST BENCHMARK DATA
+   ========================================================= */
+const COST_BENCHMARK = [
+  {
+    cat:'Ingredientes', grp:'DIRECT',
+    unit:'R$/kg', contracted:4.80, benchmark:4.27,
+    signal:'Commodities Agrícolas (Tomate)', signalTrend:+8.2, signalDir:'alta',
+    logPressure:3.1, window:'Jul 2025',
+    classification:'RISCO',
+    insight:'Alta de commodities agrícolas pressiona renovação. Consolidar volume com Nova Ingredientes antes do vencimento em julho.',
+  },
+  {
+    cat:'Embalagens', grp:'PACKAGING',
+    unit:'R$/kg', contracted:1.85, benchmark:1.72,
+    signal:'Resina PET (mercado spot)', signalTrend:-3.4, signalDir:'queda',
+    logPressure:1.9, window:'Out 2025',
+    classification:'OPORTUNIDADE',
+    insight:'Queda do PET no mercado spot abre janela favorável. Renegociar antes do contrato da Alpha Packaging vencer em outubro.',
+  },
+  {
+    cat:'Logística', grp:'LOGISTICS',
+    unit:'R$/km', contracted:0.92, benchmark:0.78,
+    signal:'Índice de Frete Rodoviário (IAFT)', signalTrend:+5.2, signalDir:'alta',
+    logPressure:11.5, window:'Q2 2025',
+    classification:'RISCO',
+    insight:'Pressão do diesel e reajuste contratual. RFQ comparativo entre Transvia e Express pode capturar R$ 0,8–1,0M.',
+  },
+  {
+    cat:'MRO & Manutenção', grp:'INDIRECT',
+    unit:'R$/OS', contracted:1850, benchmark:1920,
+    signal:'Índice de Custo de Mão de Obra (ICMO)', signalTrend:+1.8, signalDir:'alta',
+    logPressure:1.2, window:'Q3 2025',
+    classification:'MONITORAR',
+    insight:'Preço abaixo do benchmark — posição favorável. Migrar de corretiva para preventiva reduz custo por OS em até 40%.',
+  },
+  {
+    cat:'Serviços Gerais', grp:'INDIRECT',
+    unit:'R$/contrato', contracted:570, benchmark:545,
+    signal:'IGP-M Acumulado', signalTrend:+0.9, signalDir:'estável',
+    logPressure:0.8, window:'Dez 2025',
+    classification:'MONITORAR',
+    insight:'Desvio pequeno vs benchmark. Contrato vigente até dezembro — monitorar reajuste pelo IGP-M na renovação.',
+  },
+];
+
+// Monthly unit price evolution for key materials (R$ por unidade)
+const PRICE_EVO = {
+  'Frasco PET 500ml':    { unit:'R$/un', vals:[0.80,0.82,0.81,0.82], bench:0.76 },
+  'Extrato Base Tomate': { unit:'R$/kg', vals:[900,920,910,925],      bench:850  },
+  'Frete Inbound Sul':   { unit:'R$ M/contrato', vals:[1.85,1.92,2.05,2.10], bench:1.62 },
+};
+
+/* =========================================================
+   PAGE 6 — COST MODEL
    ========================================================= */
 function renderP6(){
+  const pf = getMonths().length / 4;
+
+  // Filter benchmark rows by group/cat filter
+  const bRows = COST_BENCHMARK.filter(r=>
+    (fState.cat==='all' || r.cat===fState.cat) &&
+    (fState.grupo==='all' || r.grp===fState.grupo)
+  );
+
+  const overBench = bRows.filter(r=>r.contracted>r.benchmark).length;
+  const avgDev = bRows.length>0
+    ? bRows.reduce((a,r)=>a+((r.contracted-r.benchmark)/r.benchmark*100),0)/bRows.length : 0;
+  const oppRows = bRows.filter(r=>r.classification==='OPORTUNIDADE');
+  const savOpp = oppRows.reduce((a,r)=>a+((r.contracted-r.benchmark)/r.benchmark)*4e6*0.3,0);
+
+  // KPIs
+  document.getElementById('p6-kpis').innerHTML = [
+    {l:'Categorias Acima Benchmark',  v:overBench+' de '+bRows.length,  s:'categorias analisadas no período',       cls:overBench>1?'k-red':'k-amber'},
+    {l:'Desvio Médio vs Benchmark',   v:fmtPct(avgDev),                  s:'média ponderada das categorias',          cls:avgDev>5?'k-red':'k-amber', vc:avgDev>0?'v-red':'v-green'},
+    {l:'Oportunidades Identificadas', v:oppRows.length,                   s:'categoria(s) com sinal favorável de mercado',cls:'k-green'},
+    {l:'Saving por Renegociação',     v:'R$ 2,4M',                       s:'pipeline estimado Q2–Q3 · 3 frentes',    cls:'k-green'},
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.l}</div><div class="kpi-val ${k.vc||''}" style="font-size:22px">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  // Benchmark bar chart — contratado vs benchmark (normalized to benchmark=100)
+  const bLabels = bRows.map(r=>r.cat.length>12?r.cat.slice(0,10)+'…':r.cat);
+  const bContracted = bRows.map(r=>parseFloat(((r.contracted/r.benchmark)*100).toFixed(1)));
+  const bBench = bRows.map(()=>100);
+  mkChart('chart-bench',{type:'bar',data:{
+    labels:bLabels,
+    datasets:[
+      {label:'Contratado (índice)',data:bContracted,backgroundColor:bRows.map(r=>r.contracted>r.benchmark?'E32726':'1a7c4e'),borderRadius:4},
+      {label:'Benchmark (100)',data:bBench,backgroundColor:'C7D9EC',borderRadius:4},
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}`}}},scales:{x:{grid:{display:false},ticks:{font:{family:'Figtree',size:10}}},y:{grid:{color:'#f3f4f6'},min:85,ticks:{callback:v=>v,font:{family:'Figtree'}}}}}});
+
+  // Price evolution line chart
+  const MONTHS_LABELS = ['Jan','Fev','Mar','Abr'];
+  const evoColors = ['#1D3C6D','#E32726','#C79A3B'];
+  const evoKeys = Object.keys(PRICE_EVO);
+  document.getElementById('price-legend').innerHTML = evoKeys.map((k,i)=>
+    `<span><span class="ld" style="background:${evoColors[i]}"></span>${k.split(' ').slice(0,2).join(' ')}</span>`
+  ).join('');
+  mkChart('chart-price-evo',{type:'line',data:{
+    labels:MONTHS_LABELS,
+    datasets: evoKeys.map((k,i)=>({
+      label:k,
+      data:PRICE_EVO[k].vals,
+      borderColor:evoColors[i],
+      pointBackgroundColor:evoColors[i],
+      tension:0.3,
+      borderWidth:2.5,
+      pointRadius:4,
+      fill:false,
+    }))
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}},scales:{x:{grid:{display:false},ticks:{font:{family:'Figtree'}}},y:{grid:{color:'#f3f4f6'},ticks:{font:{family:'Figtree'}}}}}});
+
+  // Table
+  const classCls = c=>c==='RISCO'?'b-red':c==='OPORTUNIDADE'?'b-green':'b-amber';
+  const trendIcon = d=>d==='alta'?'▲':d==='queda'?'▼':'→';
+  const trendColor = d=>d==='alta'?'var(--accent)':d==='queda'?'var(--green)':'var(--text-muted)';
+  document.getElementById('p6-table').innerHTML = bRows.map(r=>{
+    const dev = ((r.contracted-r.benchmark)/r.benchmark*100);
+    const over = dev>0;
+    return `<tr>
+      <td><strong>${r.cat}</strong></td>
+      <td><span class="badge b-brand">${r.grp}</span></td>
+      <td class="r">${r.contracted.toLocaleString('pt-BR')} <small style="color:var(--text-muted)">${r.unit}</small></td>
+      <td class="r">${r.benchmark.toLocaleString('pt-BR')} <small style="color:var(--text-muted)">${r.unit}</small></td>
+      <td class="r" style="color:${over?'var(--accent)':'var(--green)'};font-weight:700">${over?'+':''}${dev.toFixed(1)}%</td>
+      <td>
+        <div style="font-size:11px;color:var(--text)">${r.signal}</div>
+        <div style="font-size:10.5px;font-weight:700;color:${trendColor(r.signalDir)}">${trendIcon(r.signalDir)} ${r.signalTrend>0?'+':''}${r.signalTrend}%</div>
+      </td>
+      <td class="r" style="color:${r.logPressure>5?'var(--accent)':r.logPressure>2?'#d97706':'var(--text-muted)'};font-weight:600">${r.logPressure.toFixed(1)}%</td>
+      <td style="font-size:11.5px;font-weight:600;color:var(--brand)">${r.window}</td>
+      <td><span class="badge ${classCls(r.classification)}">${r.classification}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Signal cards
+  const signals = [
+    {
+      color:'hl-red', icon:'⚠',
+      title:'Risco — Logística',
+      text:'O Índice de Frete Rodoviário acumulou alta de +5,2% em Q1 2025 puxado por reajuste do diesel. Contrato com Transvia elegível para revisão agora. Janela de renegociação: Q2 2025.',
+    },
+    {
+      color:'hl-green', icon:'↓',
+      title:'Oportunidade — Embalagens',
+      text:'Resina PET recuou 3,4% no mercado spot no trimestre. Alpha Packaging renova contrato em Out/2025. Iniciar processo de RFQ agora posiciona a empresa para negociar com benchmark favorável.',
+    },
+    {
+      color:'hl-amber', icon:'▲',
+      title:'Monitorar — Ingredientes',
+      text:'Commodities agrícolas subiram +8,2% na safra 2025. Contrato com Nova Ingredientes vence em Jul/2025. Antecipar negociação e avaliar cláusula de reajuste indexado ao IPCA.',
+    },
+  ];
+  document.getElementById('p6-signals').innerHTML = signals.map(sg=>`
+    <div class="hl-card ${sg.color}">
+      <div class="hl-title">${sg.icon} ${sg.title}</div>
+      <div class="hl-text">${sg.text}</div>
+    </div>`).join('');
+
+  document.getElementById('p6-story').innerHTML=`
+    <div class="story-title">📊 Leitura Executiva — Cost Model</div>
+    <div class="story-body">
+      <strong>Contexto:</strong> Três das cinco categorias estão com preço contratado acima do benchmark de mercado. O maior desvio está em Logística (+18,0%), seguido de Ingredientes (+12,4%) e Embalagens (+7,6%).<br><br>
+      <strong>Achado principal:</strong> Os sinais externos apontam em direções opostas por categoria: Logística e Ingredientes sofrem pressão de alta (frete e commodities), enquanto Embalagens tem sinal favorável com queda do PET no mercado spot.<br><br>
+      <strong>Oportunidade imediata:</strong> Embalagens representa a janela mais favorável de renegociação no curto prazo. Iniciar RFQ agora, antes da renovação de outubro com Alpha Packaging, pode capturar de R$ 0,9M a R$ 1,2M em savings.<br><br>
+      <strong>Recomendação:</strong> Priorizar renegociação em Logística (urgência — Q2) e Embalagens (oportunidade — Q3). Em Ingredientes, antecipar conversa com Nova Ingredientes antes do vencimento de julho para evitar reajuste unilateral indexado ao pico de commodity.
+    </div>`;
+}
+
+/* =========================================================
+   PAGE 7 — GLOSSÁRIO
+   ========================================================= */
+function renderP7(){
   const glossary = [
     {kpi:'Spend Total',def:'Valor total gasto em compras no período selecionado, somando todos os pedidos de compra aprovados.',formula:'Σ (unit_price × quantity) por PO',like:'Quanto maior em relação ao budget, maior a pressão orçamentária. Compare com o período anterior para identificar tendência.',action:'Se acima de 105% do budget, acionar revisão de contratos e bloqueio de novas solicitações não críticas.'},
     {kpi:'Budget Consumido %',def:'Percentual do orçamento total já utilizado no período fiscal.',formula:'(Spend Total / Budget Total) × 100',like:'Acima de 100% indica estouro. Abaixo de 80% no final do período pode indicar subutilização.',action:'Acima de 100%: renegociar ou contingenciar. Abaixo de 70% em final de período: revisar planejamento de demanda.'},
@@ -1304,6 +1527,9 @@ function renderP6(){
     {kpi:'Concentração por Fornecedor',def:'Percentual do spend total representado por um único fornecedor.',formula:'(Spend do Fornecedor / Spend Total) × 100',like:'Acima de 25% por fornecedor indica dependência crítica. Pareto 80/20 aplicado ao portfólio.',action:'Fornecedor com >25%: iniciar processo de dual sourcing ou ampliar base qualificada de alternativas.'},
     {kpi:'Cobertura Tier 1 vs Tier 2',def:'Distribuição do spend entre fornecedores estratégicos (Tier 1) e operacionais/alternativos (Tier 2).',formula:'(Spend Tier 1 / Spend Total) × 100',like:'Tier 1 deve cobrir de 70–80% do spend em categorias críticas. Abaixo disso indica lacuna estratégica.',action:'Qualificar fornecedores Tier 2 adicionais ou migrar volume relevante para fornecedores mais estratégicos.'},
     {kpi:'Preço Médio Ponderado por Material',def:'Preço unitário médio ponderado pelo volume comprado de cada material.',formula:'Σ(unit_price × quantity) / Σ(quantity) por material',like:'Variação acima de 5% vs período anterior indica pressão de custo ou negociação desfavorável.',action:'Variação > 5%: renegociar ou acionar cláusula de reajuste contratual.'},
+    {kpi:'Desvio vs Benchmark de Mercado',def:'Diferença percentual entre o preço contratado e o benchmark de mercado para a mesma categoria.',formula:'((Preço Contratado − Benchmark) / Benchmark) × 100',like:'Positivo indica que a empresa paga acima do mercado — oportunidade de negociação. Negativo é posição favorável.',action:'Desvio > 8%: acionar processo de RFQ ou renegociação antes do próximo vencimento contratual.'},
+    {kpi:'Sinal Externo por Categoria',def:'Indicador de mercado que influencia o custo da categoria — ex: índice de frete, preço de commodity, custo de resina.',formula:'Variação % do índice de referência no trimestre',like:'Alta do sinal indica pressão futura de custo. Queda indica janela favorável para renegociação.',action:'Sinal de queda: iniciar RFQ imediatamente para capturar saving antes do reajuste contratual seguinte.'},
+    {kpi:'Janela de Renegociação',def:'Período ideal para iniciar negociação contratual, considerando vencimento do contrato e sinal externo favorável.',formula:'Data de vencimento do contrato − 90 dias (prazo mínimo para RFQ)',like:'Quanto mais próxima a janela, maior a urgência. Sinal favorável + vencimento próximo = prioridade máxima.',action:'Iniciar processo de RFQ 90 dias antes do vencimento para garantir tempo de homologação e negociação.'},
   ];
 
   document.getElementById('glossary-items').innerHTML = glossary.map(g=>`
@@ -1334,3 +1560,4 @@ renderP1();
 </script>
 </body>
 </html>
+
