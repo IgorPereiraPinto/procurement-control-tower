@@ -1,1 +1,1343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Procurement Analytics — Prime Harvest</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* =========================================================
+   RESET & TOKENS
+   ========================================================= */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px;-webkit-font-smoothing:antialiased}
+body{font-family:'Figtree',sans-serif;background:#F5F7FA;color:#4A5565;display:flex;flex-direction:column;min-height:100vh}
+:root{
+  --brand:#1D3C6D;--brand-dark:#132849;--brand-mid:#2d5499;
+  --accent:#E32726;--accent-light:#fdf2f2;
+  --bg:#F5F7FA;--surface:#FFFFFF;
+  --text:#4A5565;--text-strong:#1D3C6D;--text-muted:#7a8899;
+  --border:#D9E1EA;--border-light:#eef1f5;
+  --green:#1a7c4e;--green-bg:#eefaf3;
+  --amber:#9a6800;--amber-bg:#fff8e6;
+  --radius:10px;--shadow:0 1px 4px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --c1:#1D3C6D;--c2:#7FA9C9;--c3:#C79A3B;--c4:#6F8F8B;--c5:#C96A5A;--c6:#5B7290;
+}
 
+/* =========================================================
+   LAYOUT
+   ========================================================= */
+#app{display:flex;flex-direction:column;min-height:100vh}
+
+/* Header */
+.hdr{
+  background:var(--brand);
+  padding:0 28px;
+  height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;
+  border-bottom:1px solid var(--brand-dark);
+}
+.hdr-left{display:flex;align-items:center;gap:14px}
+.hdr-logo{
+  width:34px;height:34px;border-radius:8px;
+  background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.hdr-logo svg{width:20px;height:20px}
+.hdr-title{font-size:15.5px;font-weight:800;color:#fff;letter-spacing:-.2px}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.5);font-weight:400;margin-left:2px}
+.hdr-divider{width:1px;height:20px;background:rgba(255,255,255,.15);margin:0 6px}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.hdr-meta{font-size:11px;color:rgba(255,255,255,.45)}
+.live-badge{display:flex;align-items:center;gap:5px;font-size:10.5px;color:rgba(255,255,255,.5);padding:3px 8px;background:rgba(255,255,255,.08);border-radius:4px;border:1px solid rgba(255,255,255,.12)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 2px rgba(74,222,128,.25)}
+.hdr-btn{
+  display:flex;align-items:center;gap:5px;
+  font-family:inherit;font-size:11px;font-weight:600;
+  padding:5px 12px;border-radius:5px;cursor:pointer;border:none;
+  transition:all .12s;letter-spacing:.1px;
+}
+.hdr-btn.ghost{background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.15)}
+.hdr-btn.ghost:hover{background:rgba(255,255,255,.18);color:#fff}
+.hdr-btn.primary{background:var(--accent);color:#fff}
+.hdr-btn.primary:hover{background:#c71d1c}
+
+/* Filter Bar */
+.filter-bar{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 28px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  min-height:50px;
+}
+.filter-group{display:flex;align-items:center;gap:6px}
+.filter-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted)}
+.filter-select{
+  font-family:inherit;font-size:12px;color:var(--text);
+  padding:5px 28px 5px 10px;
+  border:1px solid var(--border);border-radius:6px;
+  background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a8899'/%3E%3C/svg%3E") no-repeat right 9px center;
+  cursor:pointer;appearance:none;outline:none;
+  transition:border .12s;
+}
+.filter-select:focus{border-color:var(--brand)}
+.filter-divider{width:1px;height:20px;background:var(--border);margin:0 4px}
+.filter-reset{font-family:inherit;font-size:11px;font-weight:600;color:var(--text-muted);padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;gap:4px}
+.filter-reset:hover{border-color:var(--accent);color:var(--accent)}
+.filter-indicator{font-size:11px;color:var(--brand);font-weight:600;padding:3px 9px;background:#eef4fc;border-radius:4px;display:none}
+.filter-indicator.visible{display:inline-flex;align-items:center;gap:4px}
+
+/* Navigation */
+.nav-bar{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 28px;
+  display:flex;align-items:center;gap:2px;
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+.nav-item{
+  display:flex;align-items:center;gap:6px;
+  padding:10px 14px;
+  font-size:12px;font-weight:600;color:var(--text-muted);
+  cursor:pointer;border-bottom:2.5px solid transparent;
+  transition:all .12s;white-space:nowrap;user-select:none;
+}
+.nav-item:hover{color:var(--text-strong);background:var(--bg)}
+.nav-item.active{color:var(--brand);border-bottom-color:var(--accent)}
+.nav-icon{font-size:14px;opacity:.75}
+
+/* Main Content */
+.content{flex:1;padding:22px 28px;overflow-x:hidden}
+.page{display:none}
+.page.active{display:block;animation:fadeUp .18s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* =========================================================
+   COMPONENTS
+   ========================================================= */
+.page-header{margin-bottom:20px}
+.page-title{font-size:18px;font-weight:800;color:var(--text-strong);margin-bottom:3px}
+.page-sub{font-size:12px;color:var(--text-muted)}
+
+/* KPI Grid */
+.kpi-grid{display:grid;gap:14px;margin-bottom:18px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g5{grid-template-columns:repeat(5,1fr)}
+.g6{grid-template-columns:repeat(6,1fr)}
+.kpi{
+  background:var(--surface);border-radius:var(--radius);
+  padding:16px 18px;box-shadow:var(--shadow);
+  border-top:3px solid var(--border);
+  transition:box-shadow .12s;
+}
+.kpi:hover{box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.kpi.k-brand{border-top-color:var(--brand)}
+.kpi.k-red{border-top-color:var(--accent)}
+.kpi.k-green{border-top-color:var(--green)}
+.kpi.k-amber{border-top-color:#d97706}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:7px}
+.kpi-val{font-size:24px;font-weight:800;color:var(--text-strong);line-height:1;margin-bottom:5px;font-variant-numeric:tabular-nums}
+.kpi-val.v-red{color:var(--accent)}
+.kpi-val.v-green{color:var(--green)}
+.kpi-val.v-amber{color:#d97706}
+.kpi-sub{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700}
+.p-red{background:#fee2e2;color:#b91c1c}
+.p-green{background:#dcfce7;color:#15803d}
+.p-amber{background:#fef3c7;color:#92400e}
+.p-blue{background:#dbeafe;color:#1e40af}
+.p-gray{background:#f3f4f6;color:#4b5563}
+
+/* Chart Cards */
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);margin-bottom:16px}
+.chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.chart-title{font-size:13px;font-weight:700;color:var(--text-strong)}
+.chart-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--text-muted);align-items:center}
+.ld{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:middle}
+
+/* Grid layouts */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.col-6040{display:grid;grid-template-columns:3fr 2fr;gap:16px}
+.col-4060{display:grid;grid-template-columns:2fr 3fr;gap:16px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+/* Tables */
+.table-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.table-hdr{padding:14px 18px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.table-title{font-size:13px;font-weight:700;color:var(--text-strong)}
+.table-meta{font-size:11px;color:var(--text-muted)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{
+  background:#f9fafc;padding:9px 14px;text-align:left;
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--text-muted);
+  border-bottom:1px solid var(--border-light);white-space:nowrap;
+}
+th.r,td.r{text-align:right}
+th.c,td.c{text-align:center}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--border-light);color:var(--text);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafbfd}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap}
+.b-brand{background:#dbeafe;color:#1e40af}
+.b-red{background:#fee2e2;color:#b91c1c}
+.b-green{background:#dcfce7;color:#15803d}
+.b-amber{background:#fef3c7;color:#92400e}
+.b-gray{background:#f3f4f6;color:#4b5563}
+.b-crit{background:var(--accent);color:#fff}
+
+/* Risk bar */
+.rbar{display:flex;align-items:center;gap:7px}
+.rbar-num{font-weight:700;min-width:24px}
+.rbar-track{flex:1;height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden}
+.rbar-fill{height:100%;border-radius:3px}
+
+/* Bar rows */
+.bar-row{display:grid;grid-template-columns:160px 1fr 70px;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{font-size:11.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{height:18px;background:#f3f4f6;border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.bar-val{font-size:11.5px;font-weight:700;text-align:right}
+
+/* Alert block */
+.alert-block{
+  background:var(--accent-light);
+  border:1px solid #fca5a5;
+  border-left:4px solid var(--accent);
+  border-radius:var(--radius);
+  padding:14px 16px;
+  margin-bottom:16px;
+}
+.alert-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.alert-title{font-size:12.5px;font-weight:700;color:var(--accent)}
+.alert-items{display:flex;flex-direction:column;gap:6px}
+.alert-item{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#7f1d1d}
+.alert-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px}
+
+/* Story block */
+.story{
+  background:linear-gradient(135deg,#eef4fc 0%,#f5f8fd 100%);
+  border-left:4px solid var(--brand);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  margin-bottom:16px;
+}
+.story-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--brand);margin-bottom:8px}
+.story-body{font-size:12.5px;color:var(--text);line-height:1.7}
+.story-body strong{color:var(--text-strong)}
+
+/* Highlight card */
+.hl-card{background:var(--surface);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);border-left:4px solid var(--border)}
+.hl-card.hl-brand{border-left-color:var(--brand)}
+.hl-card.hl-red{border-left-color:var(--accent)}
+.hl-card.hl-green{border-left-color:var(--green)}
+.hl-card.hl-amber{border-left-color:#d97706}
+.hl-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:5px}
+.hl-text{font-size:12px;color:var(--text);line-height:1.6}
+
+/* Pareto bar with cumulative */
+.pareto-row{display:grid;grid-template-columns:155px 1fr 60px 55px;align-items:center;gap:9px;margin-bottom:7px}
+
+/* Scatter container */
+.scatter-wrap{position:relative;width:100%;height:280px}
+
+/* Section divider */
+.sdiv{margin:20px 0;border:none;border-top:1px solid var(--border-light)}
+
+/* Glossary */
+.gloss-item{background:var(--surface);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);margin-bottom:12px}
+.gloss-kpi{font-size:14px;font-weight:800;color:var(--text-strong);margin-bottom:4px}
+.gloss-def{font-size:12.5px;color:var(--text);margin-bottom:10px;line-height:1.65}
+.gloss-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.gloss-block{background:var(--bg);border-radius:6px;padding:10px 12px}
+.gloss-block-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:4px}
+.gloss-block-val{font-size:11.5px;color:var(--text);line-height:1.55}
+code{font-family:'Courier New',monospace;font-size:11px;background:#f3f4f6;padding:1px 5px;border-radius:3px}
+
+/* Source section */
+.source-card{background:var(--surface);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:12px}
+.source-title{font-size:13px;font-weight:700;color:var(--text-strong);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+
+/* Responsiveness */
+@media(max-width:1100px){.g6{grid-template-columns:repeat(3,1fr)}.g5{grid-template-columns:repeat(3,1fr)}.two-col,.col-6040,.col-4060{grid-template-columns:1fr}}
+@media(max-width:800px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(2,1fr)}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* Tooltips */
+[data-tip]{position:relative;cursor:help}
+[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:#1D3C6D;color:#fff;font-size:10.5px;padding:4px 8px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:1000}
+[data-tip]:hover::after{opacity:1}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ========================================================= HEADER -->
+<header class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">
+      <svg viewBox="0 0 20 20" fill="none">
+        <rect x="1" y="12" width="3" height="7" rx="1" fill="white" opacity=".6"/>
+        <rect x="6" y="8" width="3" height="11" rx="1" fill="white" opacity=".8"/>
+        <rect x="11" y="5" width="3" height="14" rx="1" fill="white"/>
+        <rect x="16" y="2" width="3" height="17" rx="1" fill="#E32726"/>
+        <circle cx="17.5" cy="1.5" r="1.5" fill="#E32726"/>
+      </svg>
+    </div>
+    <div>
+      <div class="hdr-title">Procurement Analytics</div>
+    </div>
+    <div class="hdr-divider"></div>
+    <div class="hdr-sub">Prime Harvest</div>
+    <div class="hdr-divider"></div>
+    <div class="live-badge"><span class="live-dot"></span> Ao vivo</div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-meta">Última atualização: <strong id="last-upd" style="color:rgba(255,255,255,.6)">30/04/2025 18:00</strong></div>
+    <button class="hdr-btn ghost" onclick="resetFilters()">✕ Limpar filtros</button>
+    <button class="hdr-btn primary" onclick="alert('Exportação disponível na versão Enterprise')">↓ Exportar relatório</button>
+  </div>
+</header>
+
+<!-- ========================================================= FILTER BAR -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <span class="filter-label">Ano</span>
+    <select class="filter-select" id="f-ano" onchange="applyFilters()">
+      <option value="all">Todos</option>
+      <option value="2025" selected>2025</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Mês</span>
+    <select class="filter-select" id="f-mes" onchange="applyFilters()">
+      <option value="all">Todos</option>
+      <option value="1">Janeiro</option>
+      <option value="2">Fevereiro</option>
+      <option value="3">Março</option>
+      <option value="4">Abril</option>
+    </select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <span class="filter-label">Grupo</span>
+    <select class="filter-select" id="f-grupo" onchange="applyFilters()">
+      <option value="all">Todos os Grupos</option>
+      <option value="DIRECT">Direct</option>
+      <option value="PACKAGING">Packaging</option>
+      <option value="LOGISTICS">Logistics</option>
+      <option value="INDIRECT">Indirect</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Categoria</span>
+    <select class="filter-select" id="f-cat" onchange="applyFilters()">
+      <option value="all">Todas as Categorias</option>
+      <option value="Ingredientes">Ingredientes</option>
+      <option value="Embalagens">Embalagens</option>
+      <option value="Logística">Logística</option>
+      <option value="MRO & Manutenção">MRO & Manutenção</option>
+      <option value="Serviços Gerais">Serviços Gerais</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Fornecedor</span>
+    <select class="filter-select" id="f-sup" onchange="applyFilters()">
+      <option value="all">Todos os Fornecedores</option>
+      <option value="SUP001">Nova Ingredientes</option>
+      <option value="SUP002">Spice Masters Ind.</option>
+      <option value="SUP003">Condimentos Brasil</option>
+      <option value="SUP004">Alpha Packaging</option>
+      <option value="SUP005">FlexPack Ind.</option>
+      <option value="SUP006">Transvia Logística</option>
+      <option value="SUP007">Express Distribuidora</option>
+      <option value="SUP008">TechMRO Serviços</option>
+      <option value="SUP009">Facilities Pro</option>
+    </select>
+  </div>
+  <div class="filter-divider"></div>
+  <span class="filter-indicator" id="filter-chip">🔵 Filtros aplicados</span>
+  <button class="filter-reset" onclick="resetFilters()">↺ Redefinir</button>
+</div>
+
+<!-- ========================================================= NAV -->
+<nav class="nav-bar" id="nav">
+  <div class="nav-item active" data-page="p1" onclick="navTo('p1')"><span class="nav-icon">◉</span>Resumo Executivo</div>
+  <div class="nav-item" data-page="p2" onclick="navTo('p2')"><span class="nav-icon">◈</span>Spend &amp; Budget</div>
+  <div class="nav-item" data-page="p3" onclick="navTo('p3')"><span class="nav-icon">⟲</span>Suppliers &amp; Negotiation</div>
+  <div class="nav-item" data-page="p4" onclick="navTo('p4')"><span class="nav-icon">⏱</span>Processo &amp; Operação</div>
+  <div class="nav-item" data-page="p5" onclick="navTo('p5')"><span class="nav-icon">⚑</span>Risco &amp; Compliance</div>
+  <div class="nav-item" data-page="p6" onclick="navTo('p6')"><span class="nav-icon">☰</span>Glossário &amp; Fontes</div>
+</nav>
+
+<!-- ========================================================= CONTENT -->
+<div class="content">
+
+<!-- ======================== PAGE 1 — RESUMO EXECUTIVO -->
+<div class="page active" id="p1">
+  <div class="page-header">
+    <div class="page-title">Resumo Executivo</div>
+    <div class="page-sub" id="p1-sub">Visão consolidada · Jan–Abr 2025 · Todos os grupos</div>
+  </div>
+
+  <div class="kpi-grid g6" id="kpi-top"></div>
+  <div class="kpi-grid g4" id="kpi-bottom" style="margin-top:0"></div>
+
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Evolução Mensal — Spend vs Budget</div>
+          <div class="chart-sub" id="monthly-sub">Realizado e orçamento acumulado por mês · R$ M</div>
+        </div>
+        <div class="legend">
+          <span><span class="ld" style="background:var(--c1)"></span>Realizado</span>
+          <span><span class="ld" style="background:var(--border);border:1px dashed #aaa"></span>Budget</span>
+        </div>
+      </div>
+      <div style="position:relative;height:220px"><canvas id="chart-monthly"></canvas></div>
+    </div>
+    <div>
+      <div class="chart-card" style="margin-bottom:14px">
+        <div class="chart-header" style="margin-bottom:12px">
+          <div><div class="chart-title">Spend por Categoria</div><div class="chart-sub">Período selecionado · R$ M</div></div>
+        </div>
+        <div id="cat-bars"></div>
+      </div>
+      <div class="alert-block" id="executive-alerts"></div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-header" style="margin-bottom:12px">
+        <div><div class="chart-title">Top Fornecedores por Spend</div><div class="chart-sub">Participação % — período selecionado</div></div>
+      </div>
+      <div id="sup-bars"></div>
+    </div>
+    <div class="story" id="p1-story"></div>
+  </div>
+</div>
+
+<!-- ======================== PAGE 2 — SPEND & BUDGET -->
+<div class="page" id="p2">
+  <div class="page-header">
+    <div class="page-title">Spend &amp; Budget</div>
+    <div class="page-sub">Performance financeira detalhada por categoria, grupo e fornecedor</div>
+  </div>
+
+  <div class="kpi-grid g4" id="p2-kpis"></div>
+
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Budget vs Realizado por Categoria</div><div class="chart-sub">R$ M — desvio evidenciado</div></div>
+        <div class="legend"><span><span class="ld" style="background:var(--c1)"></span>Realizado</span><span><span class="ld" style="background:var(--c2)"></span>Budget</span></div>
+      </div>
+      <div style="position:relative;height:240px"><canvas id="chart-bvr"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Spend por Grupo de Procurement</div><div class="chart-sub">Distribuição percentual · R$ M</div></div>
+      </div>
+      <div style="position:relative;height:240px"><canvas id="chart-group"></canvas></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-hdr">
+      <div class="table-title">Detalhamento por Categoria — Budget vs Realizado</div>
+      <div class="table-meta" id="p2-meta"></div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th>Categoria</th><th>Grupo</th>
+        <th class="r">Budget (R$ M)</th><th class="r">Realizado (R$ M)</th>
+        <th class="r">Desvio R$</th><th class="r">Desvio %</th>
+        <th class="r">% Consumido</th><th>Status</th>
+      </tr></thead>
+      <tbody id="p2-table"></tbody>
+    </table></div>
+  </div>
+
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Pareto de Fornecedores — 80/20</div><div class="chart-sub">Spend acumulado por fornecedor</div></div></div>
+      <div id="pareto-rows"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Top Materiais por Impacto no Custo</div><div class="chart-sub">Preço médio ponderado · R$ por unidade</div></div></div>
+      <div id="material-rows"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== PAGE 3 — SUPPLIERS & NEGOTIATION -->
+<div class="page" id="p3">
+  <div class="page-header">
+    <div class="page-title">Suppliers &amp; Negotiation</div>
+    <div class="page-sub">Concentração, dependência e oportunidades de savings por fornecedor e categoria</div>
+  </div>
+
+  <div class="kpi-grid g4" id="p3-kpis"></div>
+
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Concentração de Spend por Fornecedor</div><div class="chart-sub">Participação % — Pareto 80/20 evidenciado</div></div></div>
+      <div style="position:relative;height:260px"><canvas id="chart-sup-donut"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Spend por Tier e Região</div><div class="chart-sub">Tier 1 vs Tier 2 · por região geográfica</div></div></div>
+      <div style="position:relative;height:260px"><canvas id="chart-tier"></canvas></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-hdr">
+      <div class="table-title">Tabela Analítica de Fornecedores</div>
+      <div class="table-meta" id="p3-meta"></div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th>Fornecedor</th><th>Grupo</th><th>Região</th><th>Tier</th>
+        <th class="r">Spend R$ M</th><th class="r">% do Total</th>
+        <th class="r">Saving Pot. R$ M</th><th class="r">Lead Time (d)</th>
+        <th class="c">Crítico</th><th>Contrato</th>
+      </tr></thead>
+      <tbody id="p3-table"></tbody>
+    </table></div>
+  </div>
+
+  <div class="story" id="p3-story"></div>
+</div>
+
+<!-- ======================== PAGE 4 — PROCESSO & OPERAÇÃO -->
+<div class="page" id="p4">
+  <div class="page-header">
+    <div class="page-title">Processo &amp; Operação</div>
+    <div class="page-sub">Eficiência operacional do fluxo de compras — lead times, compradores e plantas</div>
+  </div>
+
+  <div class="kpi-grid g4" id="p4-kpis"></div>
+
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Lead Time Médio por Categoria</div><div class="chart-sub">Dias úteis médios entre pedido e entrega</div></div></div>
+      <div style="position:relative;height:230px"><canvas id="chart-lt-cat"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Volume de Pedidos e Spend por Comprador</div><div class="chart-sub">Qtd POs e spend gerenciado</div></div>
+        <div class="legend"><span><span class="ld" style="background:var(--c1)"></span>Spend R$ M</span><span><span class="ld" style="background:var(--c2)"></span>Nº POs</span></div>
+      </div>
+      <div style="position:relative;height:230px"><canvas id="chart-buyer"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-6040">
+    <div class="table-card" style="margin-bottom:0">
+      <div class="table-hdr"><div class="table-title">Lead Time por Fornecedor</div></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Fornecedor</th><th>Categoria</th><th class="r">Lead Time Médio (d)</th><th class="r">Nº Pedidos</th><th>Faixa</th></tr></thead>
+        <tbody id="p4-table"></tbody>
+      </table></div>
+    </div>
+    <div>
+      <div class="hl-card hl-amber" style="margin-bottom:14px">
+        <div class="hl-title">⏱ Gargalos Identificados</div>
+        <div class="hl-text" id="bottleneck-text"></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-header" style="margin-bottom:12px"><div><div class="chart-title">Pedidos por Planta</div></div></div>
+        <div id="plant-bars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== PAGE 5 — RISCO & COMPLIANCE -->
+<div class="page" id="p5">
+  <div class="page-header">
+    <div class="page-title">Risco &amp; Compliance</div>
+    <div class="page-sub">Concentração de risco, governança contratual e exposição operacional da base de fornecedores</div>
+  </div>
+
+  <div class="kpi-grid g4" id="p5-kpis"></div>
+
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Spend em Fornecedores Críticos vs Não Críticos</div><div class="chart-sub">Exposição operacional — % do spend total</div></div></div>
+      <div style="position:relative;height:230px"><canvas id="chart-crit"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Cobertura Tier 1 vs Tier 2</div><div class="chart-sub">Distribuição de spend por nível de fornecedor</div></div></div>
+      <div style="position:relative;height:230px"><canvas id="chart-tier2"></canvas></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-hdr"><div class="table-title">Matriz de Criticidade e Compliance</div></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th>Fornecedor</th><th>Tier</th><th>Crítico</th>
+        <th class="r">Spend R$ M</th><th class="r">% Total</th>
+        <th>Contrato</th><th>Status</th><th>Região</th><th>Nível de Risco</th>
+      </tr></thead>
+      <tbody id="p5-table"></tbody>
+    </table></div>
+  </div>
+
+  <div class="story" id="p5-story"></div>
+
+  <div class="alert-block" id="p5-alerts"></div>
+</div>
+
+<!-- ======================== PAGE 6 — GLOSSÁRIO -->
+<div class="page" id="p6">
+  <div class="page-header">
+    <div class="page-title">Glossário, Fontes e Regras</div>
+    <div class="page-sub">Definições, fórmulas, critérios de alerta e metodologia do dashboard</div>
+  </div>
+
+  <div class="kpi-grid g3" style="margin-bottom:24px">
+    <div class="hl-card hl-brand">
+      <div class="hl-title">📋 Fontes de Dados</div>
+      <div class="hl-text">Purchase Orders · Suppliers Master · Budget Anual<br>Periodicidade: diária (POs) | mensal (Budget)</div>
+    </div>
+    <div class="hl-card hl-green">
+      <div class="hl-title">🔄 Frequência de Atualização</div>
+      <div class="hl-text">POs: em tempo real (pós-aprovação no ERP)<br>Budget: revisão mensal pelo time de FP&amp;A</div>
+    </div>
+    <div class="hl-card hl-amber">
+      <div class="hl-title">⚠ Critérios de Alerta</div>
+      <div class="hl-text">Desvio budget &gt; 5% · Lead time &gt; 15 dias<br>Spend crítico &gt; 70% · Contrato inativo + PO aberta</div>
+    </div>
+  </div>
+
+  <div id="glossary-items"></div>
+
+  <div class="source-card">
+    <div class="source-title">📂 Datasets Utilizados</div>
+    <div class="kpi-grid g3" style="margin-bottom:0">
+      <div>
+        <strong style="font-size:12px;color:var(--text-strong)">purchase_orders</strong>
+        <div class="hl-text" style="margin-top:6px;font-size:11.5px">Tabela fato transacional. Campos: <code>purchase_order_id</code>, <code>supplier_id</code>, <code>material_description</code>, <code>category_name</code>, <code>procurement_group</code>, <code>order_date</code>, <code>delivery_date</code>, <code>quantity</code>, <code>unit_price</code>, <code>total_amount</code>, <code>plant_code</code>, <code>buyer_name</code></div>
+      </div>
+      <div>
+        <strong style="font-size:12px;color:var(--text-strong)">suppliers</strong>
+        <div class="hl-text" style="margin-top:6px;font-size:11.5px">Dimensão mestre. Campos: <code>supplier_id</code>, <code>supplier_name</code>, <code>supplier_group</code>, <code>supplier_region</code>, <code>supplier_status</code>, <code>contract_status</code>, <code>critical_supplier_flag</code>, <code>supplier_tier</code></div>
+      </div>
+      <div>
+        <strong style="font-size:12px;color:var(--text-strong)">budget</strong>
+        <div class="hl-text" style="margin-top:6px;font-size:11.5px">Referência financeira. Campos: <code>fiscal_year</code>, <code>fiscal_month</code>, <code>category_name</code>, <code>budget_amount</code>. Join via <code>category_name + fiscal_year + fiscal_month</code></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /app -->
+
+<script>
+/* =========================================================
+   DATA LAYER
+   ========================================================= */
+const SUPMAP = {
+  SUP001:{name:'Nova Ingredientes',   group:'DIRECT',    region:'SUL',          status:'ACTIVE', category:'Ingredientes',    contract:'ACTIVE', critical:true,  tier:'Tier 1'},
+  SUP002:{name:'Spice Masters Ind.',  group:'DIRECT',    region:'SUDESTE',      status:'ACTIVE', category:'Ingredientes',    contract:'ACTIVE', critical:true,  tier:'Tier 1'},
+  SUP003:{name:'Condimentos Brasil',  group:'DIRECT',    region:'CENTRO-OESTE', status:'ACTIVE', category:'Ingredientes',    contract:'ACTIVE', critical:false, tier:'Tier 2'},
+  SUP004:{name:'Alpha Packaging',     group:'PACKAGING', region:'SUDESTE',      status:'ACTIVE', category:'Embalagens',      contract:'ACTIVE', critical:true,  tier:'Tier 1'},
+  SUP005:{name:'FlexPack Ind.',       group:'PACKAGING', region:'SUDESTE',      status:'ACTIVE', category:'Embalagens',      contract:'ACTIVE', critical:false, tier:'Tier 2'},
+  SUP006:{name:'Transvia Logística',  group:'LOGISTICS', region:'SUDESTE',      status:'ACTIVE', category:'Logística',       contract:'ACTIVE', critical:true,  tier:'Tier 1'},
+  SUP007:{name:'Express Distribuidora',group:'LOGISTICS',region:'SUL',          status:'ACTIVE', category:'Logística',       contract:'ACTIVE', critical:true,  tier:'Tier 1'},
+  SUP008:{name:'TechMRO Serviços',    group:'INDIRECT',  region:'SUDESTE',      status:'ACTIVE', category:'MRO & Manutenção',contract:'ACTIVE', critical:false, tier:'Tier 2'},
+  SUP009:{name:'Facilities Pro',      group:'INDIRECT',  region:'SUDESTE',      status:'ACTIVE', category:'Serviços Gerais', contract:'ACTIVE', critical:false, tier:'Tier 2'},
+};
+
+const RAW_PO = [
+  // JAN
+  {id:'PO2501001',sid:'SUP001',mat:'Extrato Base Tomate Conc.',cat:'Ingredientes',grp:'DIRECT',  od:'2025-01-06',dd:'2025-01-12',qty:2000,  up:900,    buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2501002',sid:'SUP001',mat:'Aromáticos Naturais Premium',cat:'Ingredientes',grp:'DIRECT', od:'2025-01-09',dd:'2025-01-15',qty:500,   up:1960,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2501003',sid:'SUP002',mat:'Especiarias Premium Blend',cat:'Ingredientes',grp:'DIRECT',  od:'2025-01-10',dd:'2025-01-16',qty:200,   up:4250,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2501004',sid:'SUP003',mat:'Base Tempero Especial',cat:'Ingredientes',grp:'DIRECT',      od:'2025-01-11',dd:'2025-01-17',qty:300,   up:1567,   buyer:'Carlos Mendes',plant:'SP02'},
+  {id:'PO2501005',sid:'SUP004',mat:'Frasco PET 500ml Trans.',cat:'Embalagens',grp:'PACKAGING',   od:'2025-01-07',dd:'2025-01-19',qty:3e6,   up:0.80,   buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2501006',sid:'SUP004',mat:'Tampa Rosqueada 28mm',cat:'Embalagens',grp:'PACKAGING',      od:'2025-01-07',dd:'2025-01-19',qty:3e6,   up:0.40,   buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2501007',sid:'SUP005',mat:'Caixa Papelão Duplo Face',cat:'Embalagens',grp:'PACKAGING',  od:'2025-01-10',dd:'2025-01-22',qty:300000,up:3.50,   buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2501008',sid:'SUP006',mat:'Frete Inbound Rota Sul',cat:'Logística',grp:'LOGISTICS',     od:'2025-01-05',dd:'2025-01-08',qty:1,     up:1850000,buyer:'Juliana Rocha', plant:'SP01'},
+  {id:'PO2501009',sid:'SUP007',mat:'Distribuição CD Varejo',cat:'Logística',grp:'LOGISTICS',     od:'2025-01-14',dd:'2025-01-18',qty:1,     up:1980000,buyer:'Juliana Rocha', plant:'SP01'},
+  {id:'PO2501010',sid:'SUP008',mat:'Manutenção Preventiva Linha A',cat:'MRO & Manutenção',grp:'INDIRECT',od:'2025-01-13',dd:'2025-01-28',qty:1,up:1120000,buyer:'Marcos Silva',plant:'SP01'},
+  {id:'PO2501011',sid:'SUP009',mat:'Serviços Gerais Fábrica Jan',cat:'Serviços Gerais',grp:'INDIRECT',od:'2025-01-14',dd:'2025-01-19',qty:1,up:572000,buyer:'Marcos Silva',plant:'SP01'},
+  // FEB
+  {id:'PO2502001',sid:'SUP001',mat:'Extrato Base Tomate Conc.',cat:'Ingredientes',grp:'DIRECT',  od:'2025-02-05',dd:'2025-02-11',qty:1900, up:920,    buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2502002',sid:'SUP001',mat:'Polpa de Tomate Integral',cat:'Ingredientes',grp:'DIRECT',   od:'2025-02-10',dd:'2025-02-17',qty:400,  up:1450,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2502003',sid:'SUP002',mat:'Cúrcuma em Pó Orgânico',cat:'Ingredientes',grp:'DIRECT',     od:'2025-02-07',dd:'2025-02-14',qty:150,  up:5200,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2502004',sid:'SUP002',mat:'Gengibre Desidratado Premium',cat:'Ingredientes',grp:'DIRECT',od:'2025-02-11',dd:'2025-02-18',qty:100, up:6800,   buyer:'Carlos Mendes',plant:'SP02'},
+  {id:'PO2502005',sid:'SUP003',mat:'Base Molho Especial',cat:'Ingredientes',grp:'DIRECT',        od:'2025-02-13',dd:'2025-02-20',qty:250,  up:2720,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2502006',sid:'SUP004',mat:'Frasco PET 500ml Trans.',cat:'Embalagens',grp:'PACKAGING',   od:'2025-02-06',dd:'2025-02-17',qty:2.8e6,up:0.82,  buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2502007',sid:'SUP004',mat:'Rótulo Adesivo Traseiro',cat:'Embalagens',grp:'PACKAGING',   od:'2025-02-06',dd:'2025-02-17',qty:3.5e6,up:0.28,  buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2502008',sid:'SUP005',mat:'Bandeja Plástica Display',cat:'Embalagens',grp:'PACKAGING',  od:'2025-02-12',dd:'2025-02-24',qty:80000,up:4.20,  buyer:'Ana Lima',      plant:'SP02'},
+  {id:'PO2502009',sid:'SUP004',mat:'Shrink Wrap BOPP',cat:'Embalagens',grp:'PACKAGING',          od:'2025-02-14',dd:'2025-02-24',qty:500000,up:2.45, buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2502010',sid:'SUP006',mat:'Frete Inbound Rota Sul',cat:'Logística',grp:'LOGISTICS',     od:'2025-02-04',dd:'2025-02-07',qty:1,     up:1920000,buyer:'Juliana Rocha',plant:'SP01'},
+  {id:'PO2502011',sid:'SUP007',mat:'Frete Distribuição Norte',cat:'Logística',grp:'LOGISTICS',   od:'2025-02-14',dd:'2025-02-18',qty:1,     up:1780000,buyer:'Juliana Rocha',plant:'SP01'},
+  {id:'PO2502012',sid:'SUP008',mat:'Peças Reposição Linha A',cat:'MRO & Manutenção',grp:'INDIRECT',od:'2025-02-10',dd:'2025-02-25',qty:1,up:1080000,buyer:'Marcos Silva',plant:'SP01'},
+  {id:'PO2502013',sid:'SUP009',mat:'Limpeza Industrial Fev',cat:'Serviços Gerais',grp:'INDIRECT',od:'2025-02-12',dd:'2025-02-17',qty:1,up:585000,buyer:'Marcos Silva',plant:'SP01'},
+  // MAR
+  {id:'PO2503001',sid:'SUP001',mat:'Extrato Base Tomate Conc.',cat:'Ingredientes',grp:'DIRECT',  od:'2025-03-06',dd:'2025-03-12',qty:2100, up:910,    buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2503002',sid:'SUP001',mat:'Vinagre Branco Destilado',cat:'Ingredientes',grp:'DIRECT',   od:'2025-03-10',dd:'2025-03-17',qty:600,  up:1200,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2503003',sid:'SUP002',mat:'Especiarias Premium Blend',cat:'Ingredientes',grp:'DIRECT',  od:'2025-03-07',dd:'2025-03-13',qty:180,  up:4350,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2503004',sid:'SUP002',mat:'Páprica Defumada Extra',cat:'Ingredientes',grp:'DIRECT',     od:'2025-03-11',dd:'2025-03-18',qty:120,  up:4500,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2503005',sid:'SUP003',mat:'Base Tempero Especial',cat:'Ingredientes',grp:'DIRECT',      od:'2025-03-12',dd:'2025-03-19',qty:350,  up:1620,   buyer:'Carlos Mendes',plant:'SP02'},
+  {id:'PO2503006',sid:'SUP004',mat:'Frasco PET 500ml Trans.',cat:'Embalagens',grp:'PACKAGING',   od:'2025-03-05',dd:'2025-03-17',qty:3.2e6,up:0.81,  buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2503007',sid:'SUP004',mat:'Frasco Vidro 250ml Clear',cat:'Embalagens',grp:'PACKAGING',  od:'2025-03-05',dd:'2025-03-17',qty:500000,up:2.80, buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2503008',sid:'SUP005',mat:'Caixa Papelão Duplo Face',cat:'Embalagens',grp:'PACKAGING',  od:'2025-03-11',dd:'2025-03-27',qty:250000,up:3.55, buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2503009',sid:'SUP006',mat:'Frete Inbound Rota Sul',cat:'Logística',grp:'LOGISTICS',     od:'2025-03-04',dd:'2025-03-07',qty:1,     up:2050000,buyer:'Juliana Rocha',plant:'SP01'},
+  {id:'PO2503010',sid:'SUP007',mat:'Distribuição CD Varejo Sul',cat:'Logística',grp:'LOGISTICS',  od:'2025-03-13',dd:'2025-03-17',qty:1,     up:2180000,buyer:'Juliana Rocha',plant:'SP01'},
+  {id:'PO2503011',sid:'SUP006',mat:'Frete Especial Urgente NE',cat:'Logística',grp:'LOGISTICS',  od:'2025-03-20',dd:'2025-03-23',qty:1,     up:430000, buyer:'Juliana Rocha',plant:'SP01'},
+  {id:'PO2503012',sid:'SUP008',mat:'Manutenção Corretiva Linha B',cat:'MRO & Manutenção',grp:'INDIRECT',od:'2025-03-10',dd:'2025-03-27',qty:1,up:1180000,buyer:'Marcos Silva',plant:'SP01'},
+  {id:'PO2503013',sid:'SUP009',mat:'Serviços Gerais Fábrica Mar',cat:'Serviços Gerais',grp:'INDIRECT',od:'2025-03-13',dd:'2025-03-18',qty:1,up:558000,buyer:'Marcos Silva',plant:'SP01'},
+  // APR
+  {id:'PO2504001',sid:'SUP001',mat:'Extrato Base Tomate Conc.',cat:'Ingredientes',grp:'DIRECT',  od:'2025-04-07',dd:'2025-04-14',qty:1900, up:925,    buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2504002',sid:'SUP001',mat:'Base de Tomate Premium',cat:'Ingredientes',grp:'DIRECT',     od:'2025-04-05',dd:'2025-04-11',qty:8500, up:4.35,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2504003',sid:'SUP002',mat:'Especiarias Premium Blend',cat:'Ingredientes',grp:'DIRECT',  od:'2025-04-09',dd:'2025-04-16',qty:160,  up:4400,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2504004',sid:'SUP002',mat:'Alho Granulado Extra',cat:'Ingredientes',grp:'DIRECT',       od:'2025-04-11',dd:'2025-04-18',qty:140,  up:4850,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2504005',sid:'SUP003',mat:'Molho Base Processado',cat:'Ingredientes',grp:'DIRECT',      od:'2025-04-10',dd:'2025-04-17',qty:250,  up:1820,   buyer:'Carlos Mendes',plant:'SP02'},
+  {id:'PO2504006',sid:'SUP001',mat:'Aromáticos Naturais Premium',cat:'Ingredientes',grp:'DIRECT', od:'2025-04-14',dd:'2025-04-21',qty:350,  up:1960,   buyer:'Carlos Mendes',plant:'SP01'},
+  {id:'PO2504007',sid:'SUP004',mat:'Frasco PET 500ml Trans.',cat:'Embalagens',grp:'PACKAGING',   od:'2025-04-03',dd:'2025-04-15',qty:2.5e6,up:0.82,  buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2504008',sid:'SUP004',mat:'Frasco PET 500ml Trans.',cat:'Embalagens',grp:'PACKAGING',   od:'2025-04-03',dd:'2025-04-12',qty:12000,up:0.82,  buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2504009',sid:'SUP005',mat:'Embalagem Sachê 15g',cat:'Embalagens',grp:'PACKAGING',       od:'2025-04-08',dd:'2025-04-20',qty:2e6,  up:1.10,   buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2504010',sid:'SUP004',mat:'Caixa Papelão Simples',cat:'Embalagens',grp:'PACKAGING',     od:'2025-04-09',dd:'2025-04-24',qty:200000,up:3.20, buyer:'Ana Lima',      plant:'SP01'},
+  {id:'PO2504011',sid:'SUP006',mat:'Frete Inbound - Rota Sul',cat:'Logística',grp:'LOGISTICS',   od:'2025-04-04',dd:'2025-04-07',qty:1,     up:2100000,buyer:'Juliana Rocha',plant:'SP01'},
+  {id:'PO2504012',sid:'SUP007',mat:'Distribuição CD Varejo',cat:'Logística',grp:'LOGISTICS',     od:'2025-04-14',dd:'2025-04-18',qty:1,     up:2050000,buyer:'Juliana Rocha',plant:'SP01'},
+  {id:'PO2504013',sid:'SUP008',mat:'Inspeção Equipamentos Q2',cat:'MRO & Manutenção',grp:'INDIRECT',od:'2025-04-10',dd:'2025-04-24',qty:1,up:890000,buyer:'Marcos Silva',plant:'SP01'},
+  {id:'PO2504014',sid:'SUP009',mat:'Facilities Management Abr',cat:'Serviços Gerais',grp:'INDIRECT',od:'2025-04-14',dd:'2025-04-19',qty:1,up:562000,buyer:'Marcos Silva',plant:'SP01'},
+];
+
+// Compute total and lead time for each PO
+RAW_PO.forEach(p=>{
+  p.total = p.qty * p.up;
+  const d1=new Date(p.od), d2=new Date(p.dd);
+  p.lt = Math.round((d2-d1)/86400000);
+  p.month = parseInt(p.od.split('-')[1]);
+  p.year  = parseInt(p.od.split('-')[0]);
+});
+
+// Budget: monthly per category (full year extrapolated but we show 4 months)
+const BUDGET_MONTHLY = {
+  Ingredientes:4300000, Embalagens:4800000, Logística:3600000,
+  'MRO & Manutenção':1200000, 'Serviços Gerais':600000
+};
+const MONTHS_DATA = [1,2,3,4];
+const MONTH_NAMES = {1:'Jan',2:'Fev',3:'Mar',4:'Abr'};
+
+const CAT_GROUPS = {
+  Ingredientes:'DIRECT', Embalagens:'PACKAGING',
+  Logística:'LOGISTICS', 'MRO & Manutenção':'INDIRECT', 'Serviços Gerais':'INDIRECT'
+};
+
+/* =========================================================
+   FILTER STATE
+   ========================================================= */
+let fState = {ano:'all', mes:'all', grupo:'all', cat:'all', sup:'all'};
+let activeCharts = {};
+
+function getFiltered(){
+  return RAW_PO.filter(p=>{
+    if(fState.ano!=='all' && p.year!==parseInt(fState.ano)) return false;
+    if(fState.mes!=='all' && p.month!==parseInt(fState.mes)) return false;
+    if(fState.grupo!=='all' && p.grp!==fState.grupo) return false;
+    if(fState.cat!=='all' && p.cat!==fState.cat) return false;
+    if(fState.sup!=='all' && p.sid!==fState.sup) return false;
+    return true;
+  });
+}
+
+function applyFilters(){
+  fState = {
+    ano: document.getElementById('f-ano').value,
+    mes: document.getElementById('f-mes').value,
+    grupo: document.getElementById('f-grupo').value,
+    cat: document.getElementById('f-cat').value,
+    sup: document.getElementById('f-sup').value,
+  };
+  const active = Object.values(fState).some(v=>v!=='all');
+  const chip = document.getElementById('filter-chip');
+  chip.classList.toggle('visible', active);
+  renderCurrentPage();
+}
+
+function resetFilters(){
+  ['f-ano','f-mes','f-grupo','f-cat','f-sup'].forEach(id=>{
+    document.getElementById(id).value = id==='f-ano'?'2025':'all';
+  });
+  fState = {ano:'2025',mes:'all',grupo:'all',cat:'all',sup:'all'};
+  document.getElementById('filter-chip').classList.remove('visible');
+  renderCurrentPage();
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+let currentPage = 'p1';
+function navTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  currentPage = page;
+  renderCurrentPage();
+}
+function renderCurrentPage(){
+  destroyCharts();
+  const pg = currentPage;
+  if(pg==='p1') renderP1();
+  else if(pg==='p2') renderP2();
+  else if(pg==='p3') renderP3();
+  else if(pg==='p4') renderP4();
+  else if(pg==='p5') renderP5();
+  else if(pg==='p6') renderP6();
+}
+function destroyCharts(){
+  Object.values(activeCharts).forEach(c=>{try{c.destroy()}catch(e){}});
+  activeCharts={};
+}
+
+/* =========================================================
+   UTILITIES
+   ========================================================= */
+const fmtM=(v,d=2)=>'R$ '+(v/1e6).toFixed(d)+'M';
+const fmtK=(v)=>'R$ '+(v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K');
+const fmtPct=(v,s=true)=>(s&&v>0?'+':'')+v.toFixed(1)+'%';
+const sum=(arr,k)=>arr.reduce((a,p)=>a+(k?p[k]:p),0);
+
+function groupBy(arr, key){
+  return arr.reduce((acc,p)=>{
+    const k=p[key]; acc[k]=(acc[k]||[]);acc[k].push(p); return acc;
+  },{});
+}
+
+function getMonths(){
+  if(fState.mes!=='all') return [parseInt(fState.mes)];
+  if(fState.ano!=='all') return [1,2,3,4];
+  return [1,2,3,4];
+}
+
+function getBudget(cat){
+  return BUDGET_MONTHLY[cat]*getMonths().length;
+}
+
+function mkChart(id, cfg){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const ctx = el.getContext('2d');
+  activeCharts[id] = new Chart(ctx, cfg);
+}
+
+const CPAL = ['#1D3C6D','#7FA9C9','#C79A3B','#6F8F8B','#C96A5A','#5B7290','#4a7c59','#8b4a6b'];
+
+/* =========================================================
+   PAGE 1 — RESUMO EXECUTIVO
+   ========================================================= */
+function renderP1(){
+  const data = getFiltered();
+  const totalSpend = sum(data,'total');
+  const months = getMonths();
+  const totalBudget = Object.entries(BUDGET_MONTHLY)
+    .filter(([c])=>fState.cat==='all'||c===fState.cat)
+    .reduce((a,[,v])=>a+v*months.length,0);
+  const budPct = totalBudget>0?(totalSpend/totalBudget*100):0;
+  const devAbs = totalSpend - totalBudget;
+  const devPct = totalBudget>0?(devAbs/totalBudget*100):0;
+
+  // Lead times
+  const avgLT = data.length>0?(sum(data,'lt')/data.length):0;
+  const onTime = data.filter(p=>p.lt<=10).length;
+  const onTimePct = data.length>0?(onTime/data.length*100):0;
+
+  // Savings potential (10% of over-budget categories + 5% baseline)
+  const savPot = Math.max(0, devAbs*0.5) + totalSpend*0.03;
+
+  // Spend in critical suppliers
+  const critSpend = sum(data.filter(p=>SUPMAP[p.sid]?.critical),'total');
+  const critPct = totalSpend>0?(critSpend/totalSpend*100):0;
+
+  // Update subtitle
+  const mesLabel = fState.mes==='all'?'Jan–Abr 2025':MONTH_NAMES[parseInt(fState.mes)]+'/2025';
+  const grpLabel = fState.grupo==='all'?'Todos os grupos':fState.grupo;
+  document.getElementById('p1-sub').textContent = `Visão consolidada · ${mesLabel} · ${grpLabel}`;
+
+  // KPI top (6)
+  document.getElementById('kpi-top').innerHTML = [
+    {l:'Spend Total',v:fmtM(totalSpend,1),s:fmtPct(devPct)+' vs budget',cls:devPct>5?'k-red':devPct>0?'k-amber':'k-green',vCls:devPct>5?'v-red':''},
+    {l:'Budget Total',v:fmtM(totalBudget,1),s:'Período selecionado',cls:'k-brand',vCls:''},
+    {l:'Budget Consumido',v:budPct.toFixed(1)+'%',s:`${fmtM(devAbs)} acima do budget`,cls:devPct>5?'k-red':'k-brand',vCls:devPct>5?'v-red':''},
+    {l:'Saving Potencial',v:fmtM(savPot,1),s:'Estimativa no período',cls:'k-green',vCls:'v-green'},
+    {l:'Lead Time Médio',v:avgLT.toFixed(1)+' dias',s:`${data.length} pedidos analisados`,cls:'k-brand',vCls:''},
+    {l:'Pedidos no Prazo',v:onTimePct.toFixed(0)+'%',s:`${onTime} de ${data.length} POs (≤10d)`,cls:onTimePct<70?'k-red':'k-green',vCls:onTimePct<70?'v-red':'v-green'},
+  ].map(k=>`
+    <div class="kpi ${k.cls}">
+      <div class="kpi-label">${k.l}</div>
+      <div class="kpi-val ${k.vCls}">${k.v}</div>
+      <div class="kpi-sub">${k.s}</div>
+    </div>`).join('');
+
+  // KPI bottom (4)
+  const nSuppliers = [...new Set(data.map(p=>p.sid))].length;
+  const topCat = Object.entries(groupBy(data,'cat')).sort((a,b)=>sum(b[1],'total')-sum(a[1],'total'))[0];
+  const topSup = Object.entries(groupBy(data,'sid')).sort((a,b)=>sum(b[1],'total')-sum(a[1],'total'))[0];
+  document.getElementById('kpi-bottom').innerHTML = [
+    {l:'Spend em Fornec. Críticos',v:fmtPct(critPct,false),s:fmtM(critSpend,1)+' em fornec. críticos',cls:critPct>75?'k-red':'k-brand',vCls:critPct>75?'v-red':'v-blue'},
+    {l:'Fornecedores Ativos',v:nSuppliers,s:'Com pedidos no período',cls:'k-brand',vCls:''},
+    {l:'Categoria Líder',v:topCat?topCat[0]:'—',s:topCat?fmtM(sum(topCat[1],'total'),1):'—',cls:'k-brand',vCls:''},
+    {l:'Fornecedor Líder',v:topSup?SUPMAP[topSup[0]]?.name:'—',s:topSup?fmtM(sum(topSup[1],'total'),1):'—',cls:'k-amber',vCls:''},
+  ].map(k=>`
+    <div class="kpi ${k.cls}">
+      <div class="kpi-label">${k.l}</div>
+      <div class="kpi-val ${k.vCls}" style="font-size:20px">${k.v}</div>
+      <div class="kpi-sub">${k.s}</div>
+    </div>`).join('');
+
+  // Monthly chart
+  const mLabels=[], mSpend=[], mBudget=[];
+  MONTHS_DATA.forEach(m=>{
+    const mData = RAW_PO.filter(p=>p.month===m && (fState.grupo==='all'||p.grp===fState.grupo) && (fState.cat==='all'||p.cat===fState.cat));
+    const ms = sum(mData,'total')/1e6;
+    const mb = Object.entries(BUDGET_MONTHLY)
+      .filter(([c])=>fState.cat==='all'||c===fState.cat)
+      .reduce((a,[,v])=>a+v,0)/1e6;
+    mLabels.push(MONTH_NAMES[m]);
+    mSpend.push(parseFloat(ms.toFixed(2)));
+    mBudget.push(parseFloat(mb.toFixed(2)));
+  });
+
+  mkChart('chart-monthly',{type:'bar',data:{
+    labels:mLabels,
+    datasets:[
+      {label:'Realizado',data:mSpend,backgroundColor:'#1D3C6D',borderRadius:4,borderSkipped:false},
+      {label:'Budget',data:mBudget,type:'line',borderColor:'#D9E1EA',borderDash:[4,3],pointRadius:0,tension:.3,borderWidth:1.5,fill:false}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`R$ ${ctx.parsed.y.toFixed(2)}M`}}},scales:{x:{grid:{display:false},ticks:{font:{family:'Figtree'}}},y:{grid:{color:'#f3f4f6'},ticks:{callback:v=>'R$'+v+'M',font:{family:'Figtree'}}}}}});
+
+  // Category bars
+  const catData = Object.entries(groupBy(data,'cat')).sort((a,b)=>sum(b[1],'total')-sum(a[1],'total'));
+  const maxCat = catData.length>0?sum(catData[0][1],'total'):1;
+  document.getElementById('cat-bars').innerHTML = catData.map(([cat,pos],i)=>{
+    const s=sum(pos,'total');
+    const w=(s/maxCat*100).toFixed(1);
+    return `<div class="bar-row">
+      <div class="bar-label" title="${cat}">${cat}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${CPAL[i%CPAL.length]}"></div></div>
+      <div class="bar-val">${fmtM(s,1)}</div>
+    </div>`;
+  }).join('');
+
+  // Supplier bars
+  const supData = Object.entries(groupBy(data,'sid')).sort((a,b)=>sum(b[1],'total')-sum(a[1],'total')).slice(0,6);
+  const maxSup = supData.length>0?sum(supData[0][1],'total'):1;
+  const totalS = sum(data,'total')||1;
+  document.getElementById('sup-bars').innerHTML = supData.map(([sid,pos])=>{
+    const s=sum(pos,'total');
+    const w=(s/maxSup*100).toFixed(1);
+    const pct=(s/totalS*100).toFixed(1);
+    const isCrit = SUPMAP[sid]?.critical;
+    return `<div class="bar-row" style="grid-template-columns:155px 1fr 100px">
+      <div class="bar-label" title="${SUPMAP[sid]?.name}">${SUPMAP[sid]?.name||sid} ${isCrit?'<span class="badge b-crit" style="font-size:9px;padding:1px 5px">crítico</span>':''}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${isCrit?'#1D3C6D':'#7FA9C9'}"></div></div>
+      <div class="bar-val">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  // Alerts
+  const alerts=[];
+  if(catData.length>0){
+    const topCatPct=(sum(catData[0][1],'total')/totalS*100).toFixed(1);
+    alerts.push(`<strong>${catData[0][0]}</strong> concentra ${topCatPct}% do spend — atenção à dependência da categoria`);
+  }
+  if(devPct>5) alerts.push(`Logística com desvio de <strong>+${devPct.toFixed(1)}%</strong> acima do budget — maior pressão do período`);
+  if(critPct>75) alerts.push(`<strong>${critPct.toFixed(0)}%</strong> do spend está em fornecedores críticos — risco operacional elevado`);
+  if(avgLT>10) alerts.push(`Lead time médio de <strong>${avgLT.toFixed(1)} dias</strong> — MRO & Manutenção acima de 15d`);
+  document.getElementById('executive-alerts').innerHTML = `
+    <div class="alert-header"><span style="font-size:16px">⚠</span><span class="alert-title">Alertas Executivos</span></div>
+    <div class="alert-items">${alerts.map(a=>`<div class="alert-item"><span class="alert-dot"></span><span>${a}</span></div>`).join('')}</div>`;
+
+  // Story
+  document.getElementById('p1-story').innerHTML = `
+    <div class="story-title">📋 Leitura Executiva — ${mesLabel}</div>
+    <div class="story-body">
+      <strong>Contexto:</strong> A Prime Harvest processou <strong>${data.length} pedidos</strong> no período, com spend total de <strong>${fmtM(totalSpend,1)}</strong>.<br><br>
+      <strong>Achado principal:</strong> Logística apresenta o maior desvio orçamentário (<strong>+13,5%</strong>), puxado por frete urgente no Nordeste em março. Ingredientes concentra o maior volume financeiro absoluto (<strong>${topCat?fmtM(sum(topCat[1],'total'),1):'—'}</strong>).<br><br>
+      <strong>Impacto:</strong> ${devPct>0?`Desvio de ${fmtM(devAbs,1)} acima do budget pode pressionar resultado operacional do Q2.`:'Spend dentro do orçamento planejado.'}<br><br>
+      <strong>Recomendação:</strong> Priorizar renegociação com Alpha Packaging (maior fornecedor, 24,8% do spend) e revisar contrato de Transvia Logística antes do Q2 2025.
+    </div>`;
+}
+
+/* =========================================================
+   PAGE 2 — SPEND & BUDGET
+   ========================================================= */
+function renderP2(){
+  const data = getFiltered();
+  const totalS = sum(data,'total');
+  const months = getMonths();
+
+  // Per-category analysis
+  const cats = ['Ingredientes','Embalagens','Logística','MRO & Manutenção','Serviços Gerais'];
+  const catRows = cats.map(cat=>{
+    const pos = data.filter(p=>p.cat===cat);
+    const spend = sum(pos,'total');
+    const bgt = (fState.cat==='all'||fState.cat===cat)?BUDGET_MONTHLY[cat]*months.length:0;
+    const dev = spend - bgt;
+    const devPct = bgt>0?(dev/bgt*100):0;
+    const consumed = bgt>0?(spend/bgt*100):0;
+    return {cat,spend,bgt,dev,devPct,consumed,grp:CAT_GROUPS[cat]};
+  }).filter(r=>fState.cat==='all'||r.cat===fState.cat);
+
+  // KPIs
+  const totalBgt = catRows.reduce((a,r)=>a+r.bgt,0);
+  const overBudget = catRows.filter(r=>r.devPct>0).length;
+  const avgConsume = catRows.length>0?(catRows.reduce((a,r)=>a+(r.bgt>0?r.consumed:0),0)/catRows.filter(r=>r.bgt>0).length):0;
+  document.getElementById('p2-kpis').innerHTML = [
+    {l:'Spend Total',v:fmtM(totalS,1),s:`${fmtPct((totalS-totalBgt)/totalBgt*100)} vs budget`,cls:totalS>totalBgt?'k-red':'k-green'},
+    {l:'Budget Total',v:fmtM(totalBgt,1),s:'Período selecionado',cls:'k-brand'},
+    {l:'Categorias Acima Budget',v:overBudget,s:`de ${catRows.length} categorias`,cls:overBudget>1?'k-red':'k-amber'},
+    {l:'Consumo Médio do Budget',v:avgConsume.toFixed(1)+'%',s:'Média das categorias filtradas',cls:'k-brand'},
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.l}</div><div class="kpi-val ${k.cls.includes('red')?'v-red':''}">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  document.getElementById('p2-meta').textContent = `${catRows.length} categoria(s) · ${months.length} mês(es)`;
+
+  // Budget vs Realizado chart
+  const bvrLabels = catRows.map(r=>r.cat.length>14?r.cat.slice(0,12)+'…':r.cat);
+  mkChart('chart-bvr',{type:'bar',data:{
+    labels:bvrLabels,
+    datasets:[
+      {label:'Realizado',data:catRows.map(r=>parseFloat((r.spend/1e6).toFixed(2))),backgroundColor:'#1D3C6D',borderRadius:3},
+      {label:'Budget',data:catRows.map(r=>parseFloat((r.bgt/1e6).toFixed(2))),backgroundColor:'#7FA9C9',borderRadius:3},
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: R$ ${ctx.parsed.y.toFixed(2)}M`}}},scales:{x:{grid:{display:false},ticks:{font:{family:'Figtree',size:10}}},y:{grid:{color:'#f3f4f6'},ticks:{callback:v=>'R$'+v+'M',font:{family:'Figtree'}}}}}});
+
+  // Group donut
+  const grpData = {DIRECT:0,PACKAGING:0,LOGISTICS:0,INDIRECT:0};
+  data.forEach(p=>grpData[p.grp]=(grpData[p.grp]||0)+p.total);
+  mkChart('chart-group',{type:'doughnut',data:{
+    labels:['Direct','Packaging','Logistics','Indirect'],
+    datasets:[{data:Object.values(grpData).map(v=>parseFloat((v/1e6).toFixed(2))),backgroundColor:CPAL.slice(0,4),borderWidth:2,borderColor:'#fff'}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{font:{family:'Figtree',size:11},boxWidth:10}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: R$ ${ctx.parsed.toFixed(2)}M (${((ctx.parsed/Object.values(grpData).reduce((a,v)=>a+v/1e6,0))*100).toFixed(1)}%)`}}}}});
+
+  // Table
+  document.getElementById('p2-table').innerHTML = catRows.sort((a,b)=>b.spend-a.spend).map(r=>{
+    const over=r.devPct>0;
+    const pct=r.consumed.toFixed(0);
+    return `<tr>
+      <td><strong>${r.cat}</strong></td>
+      <td><span class="badge b-brand">${r.grp}</span></td>
+      <td class="r">${(r.bgt/1e6).toFixed(2)}</td>
+      <td class="r"><strong>${(r.spend/1e6).toFixed(2)}</strong></td>
+      <td class="r" style="color:${over?'var(--accent)':'var(--green)'}"><strong>${over?'+':''}${(r.dev/1e6).toFixed(2)}M</strong></td>
+      <td class="r" style="color:${over?'var(--accent)':'var(--green)'}"><strong>${over?'+':''}${r.devPct.toFixed(1)}%</strong></td>
+      <td class="r">
+        <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+          <div style="width:60px;height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden"><div style="width:${Math.min(100,parseFloat(pct))}%;height:100%;background:${over?'var(--accent)':'var(--brand)'}"></div></div>
+          <span>${pct}%</span>
+        </div>
+      </td>
+      <td><span class="badge ${over?'b-red':'b-green'}">${over?'Acima':'OK'}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Pareto
+  const supSpend = Object.entries(groupBy(data,'sid')).map(([sid,pos])=>({sid,spend:sum(pos,'total')})).sort((a,b)=>b.spend-a.spend);
+  const totalSup = sum(supSpend,'spend')||1;
+  let cum=0;
+  document.getElementById('pareto-rows').innerHTML = supSpend.map((s,i)=>{
+    cum+=s.spend;
+    const cumPct=(cum/totalSup*100).toFixed(0);
+    const w=(s.spend/supSpend[0].spend*100).toFixed(1);
+    const is80 = cum/totalSup <= 0.8;
+    return `<div class="pareto-row">
+      <div class="bar-label" style="font-size:11px" title="${SUPMAP[s.sid]?.name}">${SUPMAP[s.sid]?.name||s.sid}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${is80?'#1D3C6D':'#7FA9C9'}"></div></div>
+      <div class="bar-val">${(s.spend/1e6).toFixed(1)}M</div>
+      <div style="font-size:10px;color:${parseFloat(cumPct)<=80?'var(--accent)':'var(--text-muted)'};font-weight:700;text-align:right">${cumPct}%</div>
+    </div>`;
+  }).join('');
+
+  // Top materials
+  const matMap={};
+  data.forEach(p=>{
+    if(!matMap[p.mat]) matMap[p.mat]={spend:0,qty:0};
+    matMap[p.mat].spend+=p.total; matMap[p.mat].qty+=p.qty;
+  });
+  const matArr = Object.entries(matMap).sort((a,b)=>b[1].spend-a[1].spend).slice(0,6);
+  const maxMat = matArr.length>0?matArr[0][1].spend:1;
+  document.getElementById('material-rows').innerHTML = matArr.map(([mat,d])=>{
+    const avg = d.qty>0?(d.spend/d.qty):0;
+    const w=(d.spend/maxMat*100).toFixed(1);
+    return `<div class="bar-row" style="grid-template-columns:140px 1fr 65px">
+      <div class="bar-label" title="${mat}" style="font-size:11px">${mat.length>18?mat.slice(0,16)+'…':mat}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:#C79A3B"></div></div>
+      <div class="bar-val" style="font-size:11px">${fmtM(d.spend,1)}</div>
+    </div>`;
+  }).join('');
+}
+
+/* =========================================================
+   PAGE 3 — SUPPLIERS & NEGOTIATION
+   ========================================================= */
+function renderP3(){
+  const data = getFiltered();
+  const totalS = sum(data,'total')||1;
+
+  const supArr = Object.entries(groupBy(data,'sid')).map(([sid,pos])=>{
+    const s=SUPMAP[sid]; const spend=sum(pos,'total');
+    const lt=sum(pos,'lt')/pos.length;
+    const savPot=spend*(s?.critical?0.08:0.05);
+    return {sid,name:s?.name||sid,group:s?.group,region:s?.region,tier:s?.tier,critical:s?.critical,contract:s?.contract,spend,pct:spend/totalS*100,lt:lt.toFixed(1),savPot};
+  }).sort((a,b)=>b.spend-a.spend);
+
+  const critCount = supArr.filter(s=>s.critical).length;
+  const t1Spend = sum(supArr.filter(s=>s.tier==='Tier 1'),'spend');
+  const t1Pct = (t1Spend/totalS*100).toFixed(1);
+  const totalSav = sum(supArr,'savPot');
+
+  document.getElementById('p3-kpis').innerHTML=[
+    {l:'Fornecedores Críticos',v:critCount,s:`de ${supArr.length} fornecedores ativos`,cls:'k-red'},
+    {l:'Cobertura Tier 1',v:t1Pct+'%',s:`${fmtM(t1Spend,1)} em Tier 1`,cls:'k-brand'},
+    {l:'Saving Potencial Total',v:fmtM(totalSav,1),s:'Estimativa de renegociação',cls:'k-green'},
+    {l:'Maior Fornecedor',v:supArr[0]?.name.split(' ')[0]||'—',s:supArr[0]?fmtM(supArr[0].spend,1)+' · '+supArr[0].pct.toFixed(1)+'%':'—',cls:'k-amber'},
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.l}</div><div class="kpi-val" style="font-size:${k.v.toString().length>8?'16px':'24px'}">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  // Donut
+  mkChart('chart-sup-donut',{type:'doughnut',data:{
+    labels:supArr.map(s=>s.name),
+    datasets:[{data:supArr.map(s=>parseFloat((s.spend/1e6).toFixed(2))),backgroundColor:CPAL,borderWidth:2,borderColor:'#fff'}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{font:{family:'Figtree',size:10},boxWidth:9,padding:8}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.toFixed(2)}M (${supArr[ctx.dataIndex].pct.toFixed(1)}%)`}}}}});
+
+  // Tier chart
+  const tierRegion={};
+  supArr.forEach(s=>{
+    const k=`${s.tier} / ${s.region}`;
+    tierRegion[k]=(tierRegion[k]||0)+s.spend;
+  });
+  mkChart('chart-tier',{type:'bar',data:{
+    labels:Object.keys(tierRegion),
+    datasets:[{label:'Spend',data:Object.values(tierRegion).map(v=>parseFloat((v/1e6).toFixed(2))),backgroundColor:['#1D3C6D','#2d5499','#7FA9C9','#adc8e0'],borderRadius:4}]
+  },options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`R$ ${ctx.parsed.x.toFixed(2)}M`}}},scales:{x:{grid:{color:'#f3f4f6'},ticks:{callback:v=>'R$'+v+'M',font:{family:'Figtree'}}},y:{grid:{display:false},ticks:{font:{family:'Figtree',size:10}}}}}});
+
+  document.getElementById('p3-meta').textContent = `${supArr.length} fornecedores · Período selecionado`;
+
+  document.getElementById('p3-table').innerHTML = supArr.map(s=>{
+    const riskLvl = s.critical&&s.pct>20?'Alto':s.critical?'Médio-Alto':'Médio';
+    const riskCls = riskLvl==='Alto'?'b-red':riskLvl==='Médio-Alto'?'b-amber':'b-gray';
+    return `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td><span class="badge b-brand">${s.group}</span></td>
+      <td>${s.region}</td>
+      <td><span class="badge ${s.tier==='Tier 1'?'b-brand':'b-gray'}">${s.tier}</span></td>
+      <td class="r"><strong>${(s.spend/1e6).toFixed(2)}</strong></td>
+      <td class="r">${s.pct.toFixed(1)}%</td>
+      <td class="r" style="color:var(--green)">${(s.savPot/1e6).toFixed(2)}</td>
+      <td class="r">${s.lt}</td>
+      <td class="c">${s.critical?'<span class="badge b-crit">SIM</span>':'<span class="badge b-gray">NÃO</span>'}</td>
+      <td><span class="badge ${s.contract==='ACTIVE'?'b-green':'b-red'}">${s.contract}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('p3-story').innerHTML=`
+    <div class="story-title">🔍 Insight de Negociação</div>
+    <div class="story-body">
+      <strong>Contexto:</strong> Alpha Packaging concentra <strong>24,8%</strong> do spend total com Tier 1 e criticidade alta.<br><br>
+      <strong>Achado:</strong> Os 4 maiores fornecedores respondem por <strong>69,4%</strong> do spend (Pareto 80/20 — limiar em 77,9%). Nova Ingredientes e Spice Masters concentram os ingredientes críticos de maior margem de renegociação.<br><br>
+      <strong>Recomendação:</strong> Iniciar RFQ para Ingredientes (saving pot. estimado <strong>${fmtM(totalSav,1)}</strong>). Monitorar concentração em Alpha Packaging para plano de dual sourcing no Q3 2025.
+    </div>`;
+}
+
+/* =========================================================
+   PAGE 4 — PROCESSO & OPERAÇÃO
+   ========================================================= */
+function renderP4(){
+  const data = getFiltered();
+  const avgLT = data.length>0?(sum(data,'lt')/data.length):0;
+  const onTime = data.filter(p=>p.lt<=10).length;
+  const onTimePct = data.length>0?(onTime/data.length*100):0;
+
+  const buyerMap={};
+  data.forEach(p=>{if(!buyerMap[p.buyer])buyerMap[p.buyer]={spend:0,count:0,lt:0};buyerMap[p.buyer].spend+=p.total;buyerMap[p.buyer].count++;buyerMap[p.buyer].lt+=p.lt;});
+
+  document.getElementById('p4-kpis').innerHTML=[
+    {l:'Lead Time Médio Geral',v:avgLT.toFixed(1)+' dias',s:`${data.length} pedidos · todos os grupos`,cls:avgLT>12?'k-red':'k-brand'},
+    {l:'Pedidos no Prazo (≤10d)',v:onTimePct.toFixed(0)+'%',s:`${onTime} de ${data.length} pedidos`,cls:onTimePct<70?'k-red':'k-green'},
+    {l:'Nº de Pedidos',v:data.length,s:`${[...new Set(data.map(p=>p.plant))].length} planta(s)`,cls:'k-brand'},
+    {l:'Compradores Ativos',v:Object.keys(buyerMap).length,s:'Período selecionado',cls:'k-brand'},
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.l}</div><div class="kpi-val ${k.cls.includes('red')?'v-red':''}">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  // LT by category chart
+  const ltCat = Object.entries(groupBy(data,'cat')).map(([cat,pos])=>({cat,avg:sum(pos,'lt')/pos.length})).sort((a,b)=>b.avg-a.avg);
+  mkChart('chart-lt-cat',{type:'bar',data:{
+    labels:ltCat.map(r=>r.cat.length>12?r.cat.slice(0,10)+'…':r.cat),
+    datasets:[{label:'Lead Time Médio (dias)',data:ltCat.map(r=>parseFloat(r.avg.toFixed(1))),backgroundColor:ltCat.map(r=>r.avg>12?'#E32726':r.avg>8?'#C79A3B':'#1D3C6D'),borderRadius:4}]
+  },options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.x.toFixed(1)} dias`}}},scales:{x:{grid:{color:'#f3f4f6'},ticks:{font:{family:'Figtree'}}},y:{grid:{display:false},ticks:{font:{family:'Figtree',size:10}}}}}});
+
+  // Buyer chart
+  const buyerArr = Object.entries(buyerMap).sort((a,b)=>b[1].spend-a[1].spend);
+  mkChart('chart-buyer',{type:'bar',data:{
+    labels:buyerArr.map(([b])=>b.split(' ')[0]),
+    datasets:[
+      {label:'Spend R$ M',data:buyerArr.map(([,v])=>parseFloat((v.spend/1e6).toFixed(2))),backgroundColor:'#1D3C6D',borderRadius:3,yAxisID:'y'},
+      {label:'Nº POs',data:buyerArr.map(([,v])=>v.count),type:'line',borderColor:'#C79A3B',pointBackgroundColor:'#C79A3B',tension:.3,yAxisID:'y1'},
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.dataset.yAxisID==='y'?'R$'+ctx.parsed.y.toFixed(2)+'M':ctx.parsed.y+' POs')}}},scales:{x:{grid:{display:false},ticks:{font:{family:'Figtree'}}},y:{grid:{color:'#f3f4f6'},ticks:{callback:v=>'R$'+v+'M',font:{family:'Figtree'}}},y1:{position:'right',grid:{display:false},ticks:{font:{family:'Figtree'}}}}}});
+
+  // LT by supplier table
+  const supLT = Object.entries(groupBy(data,'sid')).map(([sid,pos])=>({sid,name:SUPMAP[sid]?.name||sid,cat:pos[0].cat,avg:sum(pos,'lt')/pos.length,count:pos.length})).sort((a,b)=>b.avg-a.avg);
+  document.getElementById('p4-table').innerHTML = supLT.map(s=>{
+    const faixa = s.avg>15?'Crítico':s.avg>8?'Atenção':'Normal';
+    const fc = s.avg>15?'b-red':s.avg>8?'b-amber':'b-green';
+    return `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.cat}</td>
+      <td class="r" style="color:${s.avg>15?'var(--accent)':s.avg>8?'#d97706':'var(--green)'}"><strong>${s.avg.toFixed(1)}</strong></td>
+      <td class="r">${s.count}</td>
+      <td><span class="badge ${fc}">${faixa}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('bottleneck-text').innerHTML =
+    `<strong>MRO & Manutenção:</strong> lead time médio de <strong>15,3 dias</strong> — maior do portfólio. Revisar SLA com TechMRO Serviços.<br><br><strong>Embalagens:</strong> Média de <strong>12 dias</strong> com picos de 16d. Impacto direto na linha de produção.`;
+
+  // Plant bars
+  const plantMap={};
+  data.forEach(p=>{plantMap[p.plant]=(plantMap[p.plant]||0)+1});
+  const pArr=Object.entries(plantMap).sort((a,b)=>b[1]-a[1]);
+  const maxP=pArr[0]?pArr[0][1]:1;
+  document.getElementById('plant-bars').innerHTML = pArr.map(([plant,cnt])=>`
+    <div class="bar-row" style="grid-template-columns:80px 1fr 40px">
+      <div class="bar-label">${plant}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(cnt/maxP*100).toFixed(1)}%;background:var(--c6)"></div></div>
+      <div class="bar-val">${cnt}</div>
+    </div>`).join('');
+}
+
+/* =========================================================
+   PAGE 5 — RISCO & COMPLIANCE
+   ========================================================= */
+function renderP5(){
+  const data = getFiltered();
+  const totalS = sum(data,'total')||1;
+
+  const supArr = Object.entries(groupBy(data,'sid')).map(([sid,pos])=>{
+    const s=SUPMAP[sid]; const spend=sum(pos,'total');
+    const risk = s?.critical&&spend/totalS>0.2?'Alto':s?.critical?'Médio-Alto':spend/totalS>0.15?'Médio':'Baixo';
+    return {sid,name:s?.name||sid,tier:s?.tier,critical:s?.critical,spend,pct:spend/totalS*100,contract:s?.contract,status:s?.status,region:s?.region,risk};
+  }).sort((a,b)=>b.spend-a.spend);
+
+  const critSpend = sum(supArr.filter(s=>s.critical),'spend');
+  const critPct = (critSpend/totalS*100).toFixed(1);
+  const t1Spend = sum(supArr.filter(s=>s.tier==='Tier 1'),'spend');
+  const highRisk = supArr.filter(s=>s.risk==='Alto').length;
+  const contractOK = supArr.filter(s=>s.contract==='ACTIVE').length;
+
+  document.getElementById('p5-kpis').innerHTML=[
+    {l:'Spend em Fornec. Críticos',v:critPct+'%',s:fmtM(critSpend,1)+' expostos operacionalmente',cls:parseFloat(critPct)>75?'k-red':'k-amber',vCls:'v-red'},
+    {l:'Fornecedores Alto Risco',v:highRisk,s:`de ${supArr.length} fornecedores ativos`,cls:highRisk>1?'k-red':'k-amber'},
+    {l:'Cobertura Tier 1',v:((t1Spend/totalS)*100).toFixed(1)+'%',s:fmtM(t1Spend,1)+' em Tier 1',cls:'k-brand'},
+    {l:'Contratos Ativos',v:contractOK+'/'+supArr.length,s:'100% dos contratos válidos',cls:'k-green'},
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.l}</div><div class="kpi-val ${k.vCls||''}">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  // Critical donut
+  const nonCritSpend = totalS - critSpend;
+  mkChart('chart-crit',{type:'doughnut',data:{
+    labels:['Fornecedores Críticos','Não Críticos'],
+    datasets:[{data:[parseFloat((critSpend/1e6).toFixed(2)),parseFloat((nonCritSpend/1e6).toFixed(2))],backgroundColor:['#E32726','#7FA9C9'],borderWidth:2,borderColor:'#fff'}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{font:{family:'Figtree'},boxWidth:10}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: R$ ${ctx.parsed.toFixed(2)}M`}}}}});
+
+  // Tier donut
+  const t2Spend = totalS-t1Spend;
+  mkChart('chart-tier2',{type:'doughnut',data:{
+    labels:['Tier 1','Tier 2'],
+    datasets:[{data:[parseFloat((t1Spend/1e6).toFixed(2)),parseFloat((t2Spend/1e6).toFixed(2))],backgroundColor:['#1D3C6D','#C79A3B'],borderWidth:2,borderColor:'#fff'}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{font:{family:'Figtree'},boxWidth:10}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: R$ ${ctx.parsed.toFixed(2)}M`}}}}});
+
+  document.getElementById('p5-table').innerHTML = supArr.map(s=>{
+    const rCls = s.risk==='Alto'?'b-red':s.risk==='Médio-Alto'?'b-amber':'b-gray';
+    return `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td><span class="badge ${s.tier==='Tier 1'?'b-brand':'b-gray'}">${s.tier}</span></td>
+      <td class="c">${s.critical?'<span class="badge b-crit">SIM</span>':'<span class="badge b-gray">NÃO</span>'}</td>
+      <td class="r"><strong>${(s.spend/1e6).toFixed(2)}</strong></td>
+      <td class="r">${s.pct.toFixed(1)}%</td>
+      <td><span class="badge ${s.contract==='ACTIVE'?'b-green':'b-red'}">${s.contract}</span></td>
+      <td><span class="badge ${s.status==='ACTIVE'?'b-green':'b-red'}">${s.status}</span></td>
+      <td>${s.region}</td>
+      <td><span class="badge ${rCls}">${s.risk}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('p5-story').innerHTML=`
+    <div class="story-title">⚑ Análise de Risco Consolidada</div>
+    <div class="story-body">
+      <strong>Contexto:</strong> Todos os 9 fornecedores possuem contrato ativo. Cinco (5) são classificados como críticos e concentram <strong>${critPct}%</strong> do spend total.<br><br>
+      <strong>Achado:</strong> Alpha Packaging e Transvia Logística combinadas representam <strong>38,8%</strong> do spend total, ambas classificadas como Tier 1 e críticas — risco de dupla dependência.<br><br>
+      <strong>Recomendação:</strong> Mapear fornecedor backup para Logística e Embalagens. Criar score de risco formal com pesos de criticidade + concentração para revisão trimestral.
+    </div>`;
+
+  document.getElementById('p5-alerts').innerHTML=`
+    <div class="alert-header"><span style="font-size:16px">⚠</span><span class="alert-title">Alertas de Risco Ativo</span></div>
+    <div class="alert-items">
+      <div class="alert-item"><span class="alert-dot"></span><span>${critPct}% do spend em fornecedores críticos — acima do threshold de 75%</span></div>
+      <div class="alert-item"><span class="alert-dot"></span><span>Alpha Packaging: fornecedor único em Embalagens PET com 24,8% do spend total</span></div>
+      <div class="alert-item"><span class="alert-dot"></span><span>Logística: Transvia + Express Distribuidora concentram 43,5% do spend logístico — risco de ruptura combinado</span></div>
+      <div class="alert-item"><span class="alert-dot"></span><span>Condimentos Brasil (Tier 2) sem criticidade — avaliar upgrade para Tier 1 conforme volume crescente</span></div>
+    </div>`;
+}
+
+/* =========================================================
+   PAGE 6 — GLOSSÁRIO
+   ========================================================= */
+function renderP6(){
+  const glossary = [
+    {kpi:'Spend Total',def:'Valor total gasto em compras no período selecionado, somando todos os pedidos de compra aprovados.',formula:'Σ (unit_price × quantity) por PO',like:'Quanto maior em relação ao budget, maior a pressão orçamentária. Compare com o período anterior para identificar tendência.',action:'Se acima de 105% do budget, acionar revisão de contratos e bloqueio de novas solicitações não críticas.'},
+    {kpi:'Budget Consumido %',def:'Percentual do orçamento total já utilizado no período fiscal.',formula:'(Spend Total / Budget Total) × 100',like:'Acima de 100% indica estouro. Abaixo de 80% no final do período pode indicar subutilização.',action:'Acima de 100%: renegociar ou contingenciar. Abaixo de 70% em final de período: revisar planejamento de demanda.'},
+    {kpi:'Desvio vs Budget (R$)',def:'Diferença absoluta entre spend realizado e orçamento previsto.',formula:'Spend Total − Budget Total',like:'Positivo = acima do budget. Negativo = abaixo do budget (favorável).',action:'Desvio positivo > 5%: acionar comitê de revisão orçamentária e identificar categoria responsável.'},
+    {kpi:'Saving Potencial',def:'Estimativa de economia possível por renegociação de contratos, mudança de fornecedor ou otimização de especificações.',formula:'Spend × taxa estimada de saving (5–10% por perfil de risco)',like:'Quanto maior, maior a oportunidade de captura de valor. Deve ser comparado ao saving já realizado.',action:'Priorizar fornecedores com alto spend + alta taxa potencial para pipeline de renegociação Q2/Q3.'},
+    {kpi:'Lead Time Médio',def:'Tempo médio em dias entre a data do pedido e a data de entrega.',formula:'Média de (delivery_date − order_date) por PO',like:'Acima de 15 dias em Ingredientes ou 12 dias em Embalagens pode comprometer planejamento de produção.',action:'Lead time acima do SLA: acionar plano de melhoria de fornecedor ou habilitar alternativa de abastecimento.'},
+    {kpi:'% Pedidos no Prazo',def:'Percentual de pedidos entregues com lead time dentro do limite aceitável (≤10 dias para categorias operacionais).',formula:'(POs com LT ≤ 10d / Total POs) × 100',like:'Abaixo de 80% indica risco de ruptura ou atraso na produção.',action:'Abaixo de 80%: revisão de SLA contratual + avaliação de penalidades por atraso.'},
+    {kpi:'% Spend em Fornecedores Críticos',def:'Percentual do gasto total concentrado em fornecedores marcados como critical_supplier_flag = Y.',formula:'(Spend Crítico / Spend Total) × 100',like:'Acima de 75% representa alta dependência operacional e risco elevado de ruptura.',action:'Mapear fornecedores backup. Criar plano de contingência com habilitação de pelo menos 1 alternativa por fornecedor crítico.'},
+    {kpi:'Concentração por Fornecedor',def:'Percentual do spend total representado por um único fornecedor.',formula:'(Spend do Fornecedor / Spend Total) × 100',like:'Acima de 25% por fornecedor indica dependência crítica. Pareto 80/20 aplicado ao portfólio.',action:'Fornecedor com >25%: iniciar processo de dual sourcing ou ampliar base qualificada de alternativas.'},
+    {kpi:'Cobertura Tier 1 vs Tier 2',def:'Distribuição do spend entre fornecedores estratégicos (Tier 1) e operacionais/alternativos (Tier 2).',formula:'(Spend Tier 1 / Spend Total) × 100',like:'Tier 1 deve cobrir de 70–80% do spend em categorias críticas. Abaixo disso indica lacuna estratégica.',action:'Qualificar fornecedores Tier 2 adicionais ou migrar volume relevante para fornecedores mais estratégicos.'},
+    {kpi:'Preço Médio Ponderado por Material',def:'Preço unitário médio ponderado pelo volume comprado de cada material.',formula:'Σ(unit_price × quantity) / Σ(quantity) por material',like:'Variação acima de 5% vs período anterior indica pressão de custo ou negociação desfavorável.',action:'Variação > 5%: renegociar ou acionar cláusula de reajuste contratual.'},
+  ];
+
+  document.getElementById('glossary-items').innerHTML = glossary.map(g=>`
+    <div class="gloss-item">
+      <div class="gloss-kpi">${g.kpi}</div>
+      <div class="gloss-def">${g.def}</div>
+      <div class="gloss-grid">
+        <div class="gloss-block">
+          <div class="gloss-block-label">Fórmula</div>
+          <div class="gloss-block-val"><code>${g.formula}</code></div>
+        </div>
+        <div class="gloss-block">
+          <div class="gloss-block-label">Como interpretar</div>
+          <div class="gloss-block-val">${g.like}</div>
+        </div>
+        <div class="gloss-block">
+          <div class="gloss-block-label">Ação recomendada</div>
+          <div class="gloss-block-val">${g.action}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+renderP1();
+</script>
+</body>
+</html>
